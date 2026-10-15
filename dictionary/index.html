@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="输入英文单词，查询音标、中文释义和例句。" />
+    <title>拾词 · 英汉查词</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="#" aria-label="拾词首页">
+          <span class="brand-mark">拾</span>
+          <span>拾词</span>
+        </a>
+        <span class="header-note">每日一词，积少成多</span>
+      </header>
+
+      <section class="hero" aria-labelledby="page-title">
+        <p class="eyebrow">ENGLISH · CHINESE DICTIONARY</p>
+        <h1 id="page-title">遇见一个词，<br /><em>理解一种表达。</em></h1>
+        <p class="intro">内置 6,999 个高中与 IELTS 词汇，输入单词即可查看音标和中文释义。</p>
+
+        <form class="search-box" id="search-form" novalidate>
+          <label class="sr-only" for="word-input">请输入要查询的英文单词</label>
+          <svg class="search-icon" aria-hidden="true" viewBox="0 0 24 24">
+            <circle cx="11" cy="11" r="7"></circle>
+            <path d="m20 20-4-4"></path>
+          </svg>
+          <input id="word-input" name="word" type="text" autocomplete="off" spellcheck="false" placeholder="输入英文单词，例如 serendipity" />
+          <button type="submit">查询单词 <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="form-message" id="form-message" role="status" aria-live="polite"></p>
+
+        <div class="suggestions" aria-label="热门单词">
+          <span>试试：</span>
+          <button type="button" data-word="hello">hello</button>
+          <button type="button" data-word="dream">dream</button>
+          <button type="button" data-word="courage">courage</button>
+          <button type="button" data-word="serendipity">serendipity</button>
+        </div>
+      </section>
+
+      <section class="result-card is-hidden" id="result-card" aria-live="polite">
+        <div class="result-topline">
+          <div>
+            <p class="part-of-speech" id="part-of-speech">WORD</p>
+            <h2 id="result-word">hello</h2>
+          </div>
+          <button class="sound-button" id="sound-button" type="button" aria-label="播放单词发音">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M11 5 6 9H3v6h3l5 4V5Z"></path>
+              <path d="M15.5 8.5a5 5 0 0 1 0 7"></path>
+              <path d="M18 6a8.5 8.5 0 0 1 0 12"></path>
+            </svg>
+          </button>
+        </div>
+        <p class="phonetic" id="phonetic">/həˈləʊ/</p>
+        <div class="divider"></div>
+        <div class="definition-grid">
+          <span class="definition-number">01</span>
+          <div>
+            <p class="definition-label">中文释义</p>
+            <p class="chinese-definition" id="chinese-definition">你好；喂</p>
+          </div>
+        </div>
+        <div class="example-box" id="example-box">
+          <p class="definition-label">例句</p>
+          <p id="example-text">Hello, how are you today?</p>
+        </div>
+      </section>
+
+      <footer>
+        <span>SHICI DICTIONARY</span>
+        <span>为每一次好奇心准备</span>
+      </footer>
+    </main>
+    <script src="data/word-data-01.js"></script>
+    <script src="data/word-data-02.js"></script>
+    <script src="data/word-data-03.js"></script>
+    <script src="data/word-data-04.js"></script>
+    <script src="data/word-data-05.js"></script>
+    <script src="data/word-data-06.js"></script>
+    <script src="data/word-data-07.js"></script>
+    <script src="data/word-data-08.js"></script>
+    <script src="data/word-data-09.js"></script>
+    <script src="data/word-data-10.js"></script>
+    <script src="data/word-data-11.js"></script>
+    <script src="data/word-data-12.js"></script>
+    <script src="data/word-data-13.js"></script>
+    <script src="data/word-data-14.js"></script>
+    <script src="data/word-data-15.js"></script>
+    <script src="data/word-data-16.js"></script>
+    <script src="data/word-data-17.js"></script>
+    <script src="data/word-data-18.js"></script>
+    <script src="data/word-data-19.js"></script>
+    <script src="data/word-data-20.js"></script>
+    <script src="data/word-data-21.js"></script>
+    <script src="data/word-data-22.js"></script>
+    <script src="data/word-data-23.js"></script>
+    <script src="data/word-data-24.js"></script>
+    <script src="data/word-data-25.js"></script>
+    <script src="data/word-data-26.js"></script>
+    <script src="data/word-data-27.js"></script>
+    <script src="data/word-data-28.js"></script>
+    <script src="data/word-data-29.js"></script>
+    <script src="data/word-data-30.js"></script>
+    <script src="data/word-data-31.js"></script>
+    <script src="data/word-data-32.js"></script>
+    <script src="data/word-data-33.js"></script>
+    <script src="data/word-data-34.js"></script>
+    <script src="data/word-data-35.js"></script>
+    <script src="data/word-data-36.js"></script>
+    <script src="data/word-data-37.js"></script>
+    <script src="data/word-data-38.js"></script>
+    <script src="data/word-data-39.js"></script>
+    <script src="data/word-data-40.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
