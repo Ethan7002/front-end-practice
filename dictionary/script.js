@@ -277,23 +277,18 @@ function renderPractice(moduleName, item) {
   let body = `<h3 class="practice-title">${title}</h3><p class="practice-meta">${meta}</p>`;
 
   if (moduleName === "listening") {
-    body += renderAudioParts(item.audioParts || []);
-    body += renderPageGallery(item.questionPages || [], "听力题目");
-    body += renderAnswerSheet(item.answerCount || 40, `${item.title}-listening`);
+    body += `<div class="exam-split listening-split"><div class="exam-document">${renderPageGallery(item.questionPages || [], "听力题目")}</div><aside class="exam-sidebar">${renderAudioParts(item.audioParts || [])}${renderAnswerSheet(item.answerCount || 40, `${item.title}-listening`)}</aside></div>`;
     body += revealPages("查看听力原文", "听力原文", item.transcriptPages || []);
     body += revealPages("查看答案", "答案", item.answerPages || []);
   } else if (moduleName === "reading") {
-    body += `<div class="reading-layout"><div>${renderPageGallery(item.questionPages || [], "阅读文章与题目")}</div>${renderVocabularyHelper()}</div>`;
-    body += renderAnswerSheet(item.answerCount || 40, `${item.title}-reading`);
+    body += `<div class="exam-split"><div class="exam-document">${renderPageGallery(item.questionPages || [], "阅读文章与题目")}</div><aside class="exam-sidebar">${renderVocabularyHelper()}${renderAnswerSheet(item.answerCount || 40, `${item.title}-reading`)}</aside></div>`;
     body += revealPages("查看答案", "阅读答案", item.answerPages || []);
   } else if (moduleName === "writing") {
-    body += renderPageGallery(item.promptPages || [], "写作题目");
-    body += `<div class="practice-section"><strong>我的作文</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="在这里写下你的答案…"></textarea></div>`;
+    body += `<div class="exam-split writing-split"><div class="exam-document">${renderPageGallery(item.promptPages || [], "写作题目")}</div><aside class="exam-sidebar"><div class="practice-section draft-section"><strong>我的作文</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="在这里写下你的答案…"></textarea></div></aside></div>`;
     body += revealPages("查看参考文章", "参考文章与考官点评", item.modelAnswerPages || []);
     body += renderAnalysis(item.analysis);
   } else {
-    body += renderPageGallery(item.questionPages || [], "口语题目");
-    body += `<div class="practice-section"><strong>回答提纲</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="记录你的回答要点…"></textarea></div>`;
+    body += `<div class="exam-split speaking-split"><div class="exam-document">${renderPageGallery(item.questionPages || [], "口语题目")}</div><aside class="exam-sidebar"><div class="practice-section draft-section"><strong>回答提纲</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="记录你的回答要点…"></textarea></div></aside></div>`;
     body += renderAnalysis(item.analysis);
   }
   practicePanel.innerHTML = body;
@@ -431,3 +426,18 @@ document.querySelectorAll(".module-tab").forEach((tab) => tab.addEventListener("
 const totalMaterials = Object.values(ieltsContent).reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
 document.querySelector("#content-status").textContent = `${totalMaterials} 个训练单元`;
 renderIeltsModule(activeModule);
+
+const enterIeltsButton = document.querySelector("#enter-ielts");
+const exitIeltsButton = document.querySelector("#exit-ielts");
+
+function setIeltsFocus(enabled) {
+  document.body.classList.toggle("ielts-focus", enabled);
+  if (enabled) {
+    document.querySelector("#ielts-mode")?.scrollIntoView({ block: "start" });
+  } else {
+    document.querySelector("#ielts-launcher-title")?.scrollIntoView({ block: "center" });
+  }
+}
+
+enterIeltsButton?.addEventListener("click", () => setIeltsFocus(true));
+exitIeltsButton?.addEventListener("click", () => setIeltsFocus(false));
