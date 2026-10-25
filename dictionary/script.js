@@ -277,26 +277,58 @@ function renderPractice(moduleName, item) {
   let body = `<h3 class="practice-title">${title}</h3><p class="practice-meta">${meta}</p>`;
 
   if (moduleName === "listening") {
-    body += item.audio ? `<audio controls preload="metadata" src="${escapeAttribute(item.audio)}"></audio>` : "";
-    body += renderQuestions(item.questions || []);
-    body += revealBlock("查看听力原文", "听力原文", item.transcript);
-    body += revealBlock("查看答案", "答案与解析", formatAnswers(item.questions || [], item.answers));
+    body += renderAudioParts(item.audioParts || []);
+    body += renderPageGallery(item.questionPages || [], "听力题目");
+    body += renderAnswerSheet(item.answerCount || 40, `${item.title}-listening`);
+    body += revealPages("查看听力原文", "听力原文", item.transcriptPages || []);
+    body += revealPages("查看答案", "答案", item.answerPages || []);
   } else if (moduleName === "reading") {
-    body += `<div class="practice-section reading-text">${renderReadingText(item.passage || "", item.vocabulary || {})}</div>`;
-    body += `<aside class="practice-section" id="vocab-side-note"><strong>难词释义：</strong>点击文章中标记的词汇查看。</aside>`;
-    body += renderQuestions(item.questions || []);
-    body += revealBlock("查看答案", "答案与解析", formatAnswers(item.questions || [], item.answers));
+    body += `<div class="reading-layout"><div>${renderPageGallery(item.questionPages || [], "阅读文章与题目")}</div>${renderVocabularyHelper()}</div>`;
+    body += renderAnswerSheet(item.answerCount || 40, `${item.title}-reading`);
+    body += revealPages("查看答案", "阅读答案", item.answerPages || []);
   } else if (moduleName === "writing") {
-    body += `<div class="practice-section"><strong>题目</strong><p>${escapeHtml(item.prompt || "")}</p><textarea class="answer-input" placeholder="在这里写下你的答案…"></textarea></div>`;
-    body += revealBlock("查看参考文章", "参考文章", item.modelAnswer);
+    body += renderPageGallery(item.promptPages || [], "写作题目");
+    body += `<div class="practice-section"><strong>我的作文</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="在这里写下你的答案…"></textarea></div>`;
+    body += revealPages("查看参考文章", "参考文章与考官点评", item.modelAnswerPages || []);
     body += renderAnalysis(item.analysis);
   } else {
-    body += `<div class="practice-section"><strong>题目与提示</strong>${renderParagraphs(item.prompt || item.questions || "")}</div><textarea class="answer-input" placeholder="记录你的回答要点…"></textarea>`;
-    body += revealBlock("查看参考回答", "参考回答", item.modelAnswer);
+    body += renderPageGallery(item.questionPages || [], "口语题目");
+    body += `<div class="practice-section"><strong>回答提纲</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="记录你的回答要点…"></textarea></div>`;
     body += renderAnalysis(item.analysis);
   }
   practicePanel.innerHTML = body;
   bindPracticeActions();
+}
+
+function renderAudioParts(parts) {
+  if (!parts.length) return "";
+  return `<section class="practice-section"><strong>分段音频</strong><div class="audio-list">${parts.map((part) => `
+    <div class="audio-part"><div><b>${escapeHtml(part.title)}</b><small>${escapeHtml(part.range || "")}</small></div>
+    <audio controls preload="metadata" src="${escapeAttribute(part.src)}"></audio></div>`).join("")}</div></section>`;
+}
+
+function renderPageGallery(images, title) {
+  if (!images.length) return "";
+  return `<section class="practice-section document-section"><strong>${escapeHtml(title)}</strong><p class="document-tip">点击页面可在新窗口查看原图。</p><div class="document-pages">${images.map((src, index) => `
+    <a href="${escapeAttribute(src)}" target="_blank" rel="noopener" aria-label="查看${escapeAttribute(title)}第 ${index + 1} 页原图">
+      <img src="${escapeAttribute(src)}" loading="lazy" alt="${escapeAttribute(title)}第 ${index + 1} 页" />
+    </a>`).join("")}</div></section>`;
+}
+
+function renderAnswerSheet(count, storageKey) {
+  const inputs = Array.from({ length: count }, (_, index) => `<label><span>${index + 1}</span><input type="text" data-answer-number="${index + 1}" autocomplete="off" /></label>`).join("");
+  return `<section class="practice-section answer-sheet" data-storage-key="${escapeAttribute(storageKey)}"><div class="answer-sheet-heading"><strong>我的答案</strong><small>答案会保存在当前浏览器</small></div><div class="answer-grid">${inputs}</div></section>`;
+}
+
+function revealPages(buttonText, title, images) {
+  if (!images.length) return "";
+  const id = `reveal-${Math.random().toString(36).slice(2)}`;
+  return `<div class="practice-actions"><button type="button" data-reveal="${id}">${escapeHtml(buttonText)}</button></div>
+    <section class="practice-section is-hidden reveal-document" id="${id}">${renderPageGallery(images, title)}</section>`;
+}
+
+function renderVocabularyHelper() {
+  return `<aside class="vocab-helper"><strong>阅读词汇助手</strong><p>在文章中看到难词时，输入英文单词即可在旁边查看中文意思。</p><div class="vocab-search"><input type="text" id="reading-vocab-input" placeholder="输入难词" autocomplete="off" /><button type="button" id="reading-vocab-button">查询</button></div><div class="vocab-result" id="vocab-side-note">等待查询</div></aside>`;
 }
 
 function renderQuestions(questions) {
@@ -350,6 +382,43 @@ function bindPracticeActions() {
       if (note) note.textContent = `${button.textContent}：${button.dataset.vocabMeaning}`;
     });
   });
+  const vocabularyButton = practicePanel.querySelector("#reading-vocab-button");
+  const vocabularyInput = practicePanel.querySelector("#reading-vocab-input");
+  const lookupVocabulary = () => {
+    const word = vocabularyInput?.value.trim().toLowerCase();
+    const note = practicePanel.querySelector("#vocab-side-note");
+    if (!word || !note) return;
+    const entry = localWords[word] || window.WORD_DATABASE?.[word];
+    if (!entry) {
+      note.textContent = `暂未在离线词库中找到 “${word}”`;
+      return;
+    }
+    const parsed = parseDictionaryEntry(entry);
+    note.innerHTML = `<b>${escapeHtml(word)}</b><span>${escapeHtml(entry.phonetic || "")}</span><p>${escapeHtml(parsed.meanings.join("；"))}</p>`;
+  };
+  vocabularyButton?.addEventListener("click", lookupVocabulary);
+  vocabularyInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") lookupVocabulary();
+  });
+
+  practicePanel.querySelectorAll(".answer-sheet").forEach((sheet) => {
+    const key = `ielts-answers:${sheet.dataset.storageKey}`;
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(key) || "{}"); } catch (_) { saved = {}; }
+    sheet.querySelectorAll("[data-answer-number]").forEach((field) => {
+      field.value = saved[field.dataset.answerNumber] || "";
+      field.addEventListener("input", () => {
+        saved[field.dataset.answerNumber] = field.value;
+        localStorage.setItem(key, JSON.stringify(saved));
+      });
+    });
+  });
+
+  practicePanel.querySelectorAll("[data-draft-key]").forEach((field) => {
+    const key = `ielts-draft:${field.dataset.draftKey}`;
+    field.value = localStorage.getItem(key) || "";
+    field.addEventListener("input", () => localStorage.setItem(key, field.value));
+  });
 }
 
 function escapeHtml(value) {
@@ -360,5 +429,5 @@ function escapeRegExp(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/
 
 document.querySelectorAll(".module-tab").forEach((tab) => tab.addEventListener("click", () => renderIeltsModule(tab.dataset.module)));
 const totalMaterials = Object.values(ieltsContent).reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
-document.querySelector("#content-status").textContent = `${totalMaterials} 套资料`;
+document.querySelector("#content-status").textContent = `${totalMaterials} 个训练单元`;
 renderIeltsModule(activeModule);
