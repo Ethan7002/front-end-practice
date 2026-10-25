@@ -65,12 +65,43 @@
           <span class="definition-number">01</span>
           <div>
             <p class="definition-label">中文释义</p>
-            <p class="chinese-definition" id="chinese-definition">你好；喂</p>
+            <div class="meaning-list" id="meaning-list"></div>
           </div>
         </div>
         <div class="example-box" id="example-box">
           <p class="definition-label">例句</p>
           <p id="example-text">Hello, how are you today?</p>
+        </div>
+      </section>
+
+      <section class="ielts-mode" id="ielts-mode" aria-labelledby="ielts-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">IELTS STUDY MODE</p>
+            <h2 id="ielts-title">雅思学习模式</h2>
+            <p>按听、读、写、说整理学习资料。功能框架已准备好，等待导入你提供的正版内容。</p>
+          </div>
+          <span class="content-status" id="content-status">0 套资料</span>
+        </div>
+
+        <div class="module-tabs" role="tablist" aria-label="雅思训练模块">
+          <button class="module-tab is-active" type="button" role="tab" aria-selected="true" data-module="listening">
+            <span class="module-number">01</span><strong>听力</strong><small>Listening</small>
+          </button>
+          <button class="module-tab" type="button" role="tab" aria-selected="false" data-module="reading">
+            <span class="module-number">02</span><strong>阅读</strong><small>Reading</small>
+          </button>
+          <button class="module-tab" type="button" role="tab" aria-selected="false" data-module="writing">
+            <span class="module-number">03</span><strong>写作</strong><small>Writing</small>
+          </button>
+          <button class="module-tab" type="button" role="tab" aria-selected="false" data-module="speaking">
+            <span class="module-number">04</span><strong>口语</strong><small>Speaking</small>
+          </button>
+        </div>
+
+        <div class="study-workspace">
+          <aside class="material-list" id="material-list" aria-label="资料目录"></aside>
+          <article class="practice-panel" id="practice-panel" aria-live="polite"></article>
         </div>
       </section>
 
@@ -119,6 +150,7 @@
     <script src="data/word-data-38.js"></script>
     <script src="data/word-data-39.js"></script>
     <script src="data/word-data-40.js"></script>
+    <script src="ielts-content.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

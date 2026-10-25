@@ -39,8 +39,9 @@ function setLoading(isLoading) {
 function showResult(word, data) {
   document.querySelector("#result-word").textContent = word;
   document.querySelector("#phonetic").textContent = data.phonetic || "暂无音标";
-  document.querySelector("#part-of-speech").textContent = [data.level, data.part].filter(Boolean).join(" · ") || "英文单词";
-  document.querySelector("#chinese-definition").textContent = data.meaning || "暂无中文释义";
+  const { meanings, parts } = parseDictionaryEntry(data);
+  document.querySelector("#part-of-speech").textContent = data.level || "英文单词";
+  renderMeanings(meanings, parts);
   const exampleBox = document.querySelector("#example-box");
   exampleBox.classList.toggle("is-hidden", !data.example);
   document.querySelector("#example-text").textContent = data.example || "";
@@ -48,6 +49,66 @@ function showResult(word, data) {
   currentWord = word;
   card.classList.remove("is-hidden");
   card.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+const partNames = {
+  n: "名词", v: "动词", vt: "及物动词", vi: "不及物动词",
+  adj: "形容词", a: "形容词", adv: "副词", prep: "介词",
+  conj: "连词", pron: "代词", num: "数词", art: "冠词",
+  int: "感叹词", aux: "助动词", modal: "情态动词"
+};
+
+function parseDictionaryEntry(data) {
+  const source = String(data.meaning || "暂无中文释义")
+    .replace(/\\n|\n/g, "；")
+    .replace(/\s+/g, " ")
+    .trim();
+  const detectedParts = [];
+  const partPattern = /(?:^|[；;,]\s*)(n|v|vt|vi|adj|a|adv|prep|conj|pron|num|art|int|aux|modal)\./gi;
+  let match;
+  while ((match = partPattern.exec(source))) {
+    const name = partNames[match[1].toLowerCase()];
+    if (name && !detectedParts.includes(name)) detectedParts.push(name);
+  }
+  String(data.part || "").split(/\s*\/\s*|、/).forEach((part) => {
+    const normalized = part.trim();
+    if (normalized && normalized !== "英文单词" && !detectedParts.includes(normalized)) detectedParts.push(normalized);
+  });
+
+  const meanings = source
+    .split(/[；;](?=\s*(?:(?:n|v|vt|vi|adj|a|adv|prep|conj|pron|num|art|int|aux|modal)\.)?)/i)
+    .flatMap((group) => {
+      const cleaned = group.replace(/^\s*(?:n|v|vt|vi|adj|a|adv|prep|conj|pron|num|art|int|aux|modal)\.\s*/i, "").trim();
+      return cleaned.split(/[,，](?=\s*[^0-9])/).map((item) => item.trim());
+    })
+    .filter(Boolean);
+
+  return { meanings: [...new Set(meanings)], parts: detectedParts };
+}
+
+function renderMeanings(meanings, parts) {
+  const container = document.querySelector("#meaning-list");
+  container.replaceChildren();
+  meanings.forEach((meaning, index) => {
+    const item = document.createElement("div");
+    item.className = "meaning-item";
+    item.dataset.index = String(index + 1).padStart(2, "0");
+    const text = document.createElement("span");
+    text.textContent = meaning;
+    item.append(text);
+    container.append(item);
+  });
+  if (parts.length) {
+    const chips = document.createElement("div");
+    chips.className = "pos-chips";
+    parts.forEach((part) => {
+      const chip = document.createElement("span");
+      chip.className = "pos-chip";
+      chip.textContent = part;
+      chips.append(chip);
+    });
+    container.append(chips);
+  }
 }
 
 async function fetchWithTimeout(url, timeout = 6000) {
@@ -154,3 +215,150 @@ if (window.location.protocol === "file:") {
 }
 
 input.focus();
+
+const moduleLabels = {
+  listening: { zh: "听力", en: "Listening", hint: "音频、题目、听力原文与答案" },
+  reading: { zh: "阅读", en: "Reading", hint: "文章、题目与难词侧栏释义" },
+  writing: { zh: "写作", en: "Writing", hint: "题目、范文、答案对照与四维分析" },
+  speaking: { zh: "口语", en: "Speaking", hint: "话题卡、问题、参考回答与表达分析" }
+};
+const ieltsContent = window.IELTS_CONTENT || { listening: [], reading: [], writing: [], speaking: [] };
+const materialList = document.querySelector("#material-list");
+const practicePanel = document.querySelector("#practice-panel");
+let activeModule = "listening";
+
+function renderIeltsModule(moduleName) {
+  activeModule = moduleName;
+  document.querySelectorAll(".module-tab").forEach((tab) => {
+    const active = tab.dataset.module === moduleName;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-selected", String(active));
+  });
+  const items = Array.isArray(ieltsContent[moduleName]) ? ieltsContent[moduleName] : [];
+  materialList.replaceChildren();
+  if (!items.length) {
+    const note = document.createElement("p");
+    note.className = "practice-meta";
+    note.textContent = `${moduleLabels[moduleName].zh}资料尚未导入`;
+    materialList.append(note);
+    renderEmptyState(moduleName);
+    return;
+  }
+  items.forEach((item, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `material-item${index === 0 ? " is-active" : ""}`;
+    button.textContent = item.title || `${moduleLabels[moduleName].zh} ${index + 1}`;
+    button.addEventListener("click", () => {
+      materialList.querySelectorAll(".material-item").forEach((entry) => entry.classList.remove("is-active"));
+      button.classList.add("is-active");
+      renderPractice(moduleName, item);
+    });
+    materialList.append(button);
+  });
+  renderPractice(moduleName, items[0]);
+}
+
+function renderEmptyState(moduleName) {
+  const label = moduleLabels[moduleName];
+  practicePanel.innerHTML = `
+    <div class="empty-state">
+      <div>
+        <span class="empty-icon">${escapeHtml(label.en.slice(0, 1))}</span>
+        <h3>等待导入${escapeHtml(label.zh)}资料</h3>
+        <p>导入后这里将显示${escapeHtml(label.hint)}。当前没有放入演示题或受版权保护的教材内容。</p>
+      </div>
+    </div>`;
+}
+
+function renderPractice(moduleName, item) {
+  const title = escapeHtml(item.title || moduleLabels[moduleName].zh);
+  const meta = escapeHtml(item.meta || item.test || "学习资料");
+  let body = `<h3 class="practice-title">${title}</h3><p class="practice-meta">${meta}</p>`;
+
+  if (moduleName === "listening") {
+    body += item.audio ? `<audio controls preload="metadata" src="${escapeAttribute(item.audio)}"></audio>` : "";
+    body += renderQuestions(item.questions || []);
+    body += revealBlock("查看听力原文", "听力原文", item.transcript);
+    body += revealBlock("查看答案", "答案与解析", formatAnswers(item.questions || [], item.answers));
+  } else if (moduleName === "reading") {
+    body += `<div class="practice-section reading-text">${renderReadingText(item.passage || "", item.vocabulary || {})}</div>`;
+    body += `<aside class="practice-section" id="vocab-side-note"><strong>难词释义：</strong>点击文章中标记的词汇查看。</aside>`;
+    body += renderQuestions(item.questions || []);
+    body += revealBlock("查看答案", "答案与解析", formatAnswers(item.questions || [], item.answers));
+  } else if (moduleName === "writing") {
+    body += `<div class="practice-section"><strong>题目</strong><p>${escapeHtml(item.prompt || "")}</p><textarea class="answer-input" placeholder="在这里写下你的答案…"></textarea></div>`;
+    body += revealBlock("查看参考文章", "参考文章", item.modelAnswer);
+    body += renderAnalysis(item.analysis);
+  } else {
+    body += `<div class="practice-section"><strong>题目与提示</strong>${renderParagraphs(item.prompt || item.questions || "")}</div><textarea class="answer-input" placeholder="记录你的回答要点…"></textarea>`;
+    body += revealBlock("查看参考回答", "参考回答", item.modelAnswer);
+    body += renderAnalysis(item.analysis);
+  }
+  practicePanel.innerHTML = body;
+  bindPracticeActions();
+}
+
+function renderQuestions(questions) {
+  if (!questions.length) return "";
+  return `<div class="practice-section"><strong>题目</strong>${questions.map((question, index) => `
+    <label class="question-row"><span>${index + 1}. ${escapeHtml(question.prompt || "")}</span>
+    <input type="text" data-question="${index}" autocomplete="off" placeholder="输入答案" /></label>`).join("")}</div>`;
+}
+
+function formatAnswers(questions, answers) {
+  if (answers) return typeof answers === "string" ? answers : answers.join("\n");
+  return questions.map((question, index) => `${index + 1}. ${question.answer || ""}${question.explanation ? ` — ${question.explanation}` : ""}`).join("\n");
+}
+
+function revealBlock(buttonText, title, content) {
+  if (!content) return "";
+  const id = `reveal-${Math.random().toString(36).slice(2)}`;
+  return `<div class="practice-actions"><button type="button" data-reveal="${id}">${escapeHtml(buttonText)}</button></div>
+    <section class="practice-section is-hidden" id="${id}"><strong>${escapeHtml(title)}</strong>${renderParagraphs(content)}</section>`;
+}
+
+function renderAnalysis(analysis) {
+  if (!analysis) return "";
+  const dimensions = [["structure", "结构"], ["vocabulary", "词汇"], ["language", "语言"], ["logic", "逻辑"]];
+  const cards = dimensions.filter(([key]) => analysis[key]).map(([key, label]) => `<div class="analysis-card"><h4>${label}</h4>${renderParagraphs(analysis[key])}</div>`).join("");
+  const expressions = analysis.expressions ? `<div class="practice-section"><strong>好表达与高分表达</strong>${renderParagraphs(analysis.expressions)}</div>` : "";
+  return cards ? `<div class="practice-section"><strong>范文分析</strong><div class="analysis-grid">${cards}</div>${expressions}</div>` : expressions;
+}
+
+function renderReadingText(text, vocabulary) {
+  const escaped = escapeHtml(String(text)).replace(/\n/g, "</p><p>");
+  const marked = Object.entries(vocabulary).reduce((result, [word, meaning]) => {
+    const pattern = new RegExp(`\\b${escapeRegExp(word)}\\b`, "gi");
+    return result.replace(pattern, (matched) => `<button type="button" data-vocab-meaning="${escapeAttribute(meaning)}">${matched}</button>`);
+  }, escaped);
+  return `<p>${marked}</p>`;
+}
+
+function renderParagraphs(content) {
+  const value = Array.isArray(content) ? content.join("\n") : String(content || "");
+  return value.split(/\n+/).filter(Boolean).map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
+function bindPracticeActions() {
+  practicePanel.querySelectorAll("[data-reveal]").forEach((button) => {
+    button.addEventListener("click", () => document.getElementById(button.dataset.reveal)?.classList.toggle("is-hidden"));
+  });
+  practicePanel.querySelectorAll("[data-vocab-meaning]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const note = document.querySelector("#vocab-side-note");
+      if (note) note.textContent = `${button.textContent}：${button.dataset.vocabMeaning}`;
+    });
+  });
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
+}
+function escapeAttribute(value) { return escapeHtml(value); }
+function escapeRegExp(value) { return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+document.querySelectorAll(".module-tab").forEach((tab) => tab.addEventListener("click", () => renderIeltsModule(tab.dataset.module)));
+const totalMaterials = Object.values(ieltsContent).reduce((total, items) => total + (Array.isArray(items) ? items.length : 0), 0);
+document.querySelector("#content-status").textContent = `${totalMaterials} 套资料`;
+renderIeltsModule(activeModule);
