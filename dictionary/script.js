@@ -277,11 +277,11 @@ function renderPractice(moduleName, item) {
   let body = `<h3 class="practice-title">${title}</h3><p class="practice-meta">${meta}</p>`;
 
   if (moduleName === "listening") {
-    body += `<div class="exam-split listening-split"><div class="exam-document">${renderPageGallery(item.questionPages || [], "听力题目")}</div><aside class="exam-sidebar">${renderAudioParts(item.audioParts || [])}${renderAnswerSheet(item.answerCount || 40, `${item.title}-listening`)}</aside></div>`;
+    body += renderListeningFlow(item);
     body += revealPages("查看听力原文", "听力原文", item.transcriptPages || []);
     body += revealPages("查看答案", "答案", item.answerPages || []);
   } else if (moduleName === "reading") {
-    body += `<div class="exam-split"><div class="exam-document">${renderPageGallery(item.questionPages || [], "阅读文章与题目")}</div><aside class="exam-sidebar">${renderVocabularyHelper()}${renderAnswerSheet(item.answerCount || 40, `${item.title}-reading`)}</aside></div>`;
+    body += renderReadingFlow(item);
     body += revealPages("查看答案", "阅读答案", item.answerPages || []);
   } else if (moduleName === "writing") {
     body += `<div class="exam-split writing-split"><div class="exam-document">${renderPageGallery(item.promptPages || [], "写作题目")}</div><aside class="exam-sidebar"><div class="practice-section draft-section"><strong>我的作文</strong><textarea class="answer-input writing-draft" data-draft-key="${escapeAttribute(item.title)}" placeholder="在这里写下你的答案…"></textarea></div></aside></div>`;
@@ -302,6 +302,33 @@ function renderAudioParts(parts) {
     <audio controls preload="metadata" src="${escapeAttribute(part.src)}"></audio></div>`).join("")}</div></section>`;
 }
 
+function splitPages(images, sizes) {
+  let cursor = 0;
+  return sizes.map((size) => {
+    const group = images.slice(cursor, cursor + size);
+    cursor += size;
+    return group;
+  });
+}
+
+function renderListeningFlow(item) {
+  const pageGroups = splitPages(item.questionPages || [], [1, 2, 2, 1]);
+  const parts = item.audioParts || [];
+  return `<div class="exam-flow listening-flow">${parts.map((part, index) => {
+    const start = index * 10 + 1;
+    const end = start + 9;
+    return `<section class="exam-flow-row"><div class="exam-flow-document">${renderPageGallery(pageGroups[index] || [], `${part.title} 题目`)}</div><aside class="flow-tools">${renderAudioParts([part])}${renderAnswerRange(start, end, `${item.title}-listening`)}</aside></section>`;
+  }).join("")}</div>`;
+}
+
+function renderReadingFlow(item) {
+  const images = item.questionPages || [];
+  const sizes = images.length === 14 ? [5, 4, 5] : images.length === 12 ? [4, 4, 4] : [4, 4, Math.max(0, images.length - 8)];
+  const pageGroups = splitPages(images, sizes);
+  const ranges = [[1, 13], [14, 26], [27, 40]];
+  return `<div class="exam-flow reading-flow">${pageGroups.map((group, index) => `<section class="exam-flow-row"><div class="exam-flow-document">${renderPageGallery(group, `Reading Passage ${index + 1}`)}</div><aside class="flow-tools">${index === 0 ? renderVocabularyHelper() : ""}${renderAnswerRange(ranges[index][0], ranges[index][1], `${item.title}-reading`)}</aside></section>`).join("")}</div>`;
+}
+
 function renderPageGallery(images, title) {
   if (!images.length) return "";
   return `<section class="practice-section document-section"><strong>${escapeHtml(title)}</strong><p class="document-tip">点击页面可在新窗口查看原图。</p><div class="document-pages">${images.map((src, index) => `
@@ -311,8 +338,15 @@ function renderPageGallery(images, title) {
 }
 
 function renderAnswerSheet(count, storageKey) {
-  const inputs = Array.from({ length: count }, (_, index) => `<label><span>${index + 1}</span><input type="text" data-answer-number="${index + 1}" autocomplete="off" /></label>`).join("");
-  return `<section class="practice-section answer-sheet" data-storage-key="${escapeAttribute(storageKey)}"><div class="answer-sheet-heading"><strong>我的答案</strong><small>答案会保存在当前浏览器</small></div><div class="answer-grid">${inputs}</div></section>`;
+  return renderAnswerRange(1, count, storageKey);
+}
+
+function renderAnswerRange(start, end, storageKey) {
+  const inputs = Array.from({ length: end - start + 1 }, (_, index) => {
+    const number = start + index;
+    return `<label><span>${number}</span><input type="text" data-answer-number="${number}" autocomplete="off" /></label>`;
+  }).join("");
+  return `<section class="practice-section answer-sheet" data-storage-key="${escapeAttribute(storageKey)}"><div class="answer-sheet-heading"><strong>第 ${start}–${end} 题</strong><small>自动保存</small></div><div class="answer-grid">${inputs}</div></section>`;
 }
 
 function revealPages(buttonText, title, images) {
@@ -403,8 +437,10 @@ function bindPracticeActions() {
     sheet.querySelectorAll("[data-answer-number]").forEach((field) => {
       field.value = saved[field.dataset.answerNumber] || "";
       field.addEventListener("input", () => {
-        saved[field.dataset.answerNumber] = field.value;
-        localStorage.setItem(key, JSON.stringify(saved));
+        let latest = {};
+        try { latest = JSON.parse(localStorage.getItem(key) || "{}"); } catch (_) { latest = {}; }
+        latest[field.dataset.answerNumber] = field.value;
+        localStorage.setItem(key, JSON.stringify(latest));
       });
     });
   });
