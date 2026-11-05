@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="拾光英语——根据你的年龄和英语能力，推荐合适的聊天、视频、读物、单词与精读内容。" />
     <title>拾光英语 · 个性化学习空间</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261105-v2" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -25,13 +25,25 @@
         <div class="auth-panel">
           <p class="eyebrow">YOUR ENGLISH SPACE</p>
           <h1 id="auth-title">欢迎回来，<br /><em>从一个词开始。</em></h1>
-          <p class="lead">登录后，我们会根据你的年龄、英语水平和目标，为你安排今天的学习内容。</p>
-          <form id="login-form" class="login-form">
-            <label>你的名字<input id="login-name" type="text" placeholder="例如：小雨" autocomplete="name" required /></label>
+          <p class="lead">注册后完成英语能力评估；已有账号可以直接登录继续学习。</p>
+          <div class="auth-tabs" role="tablist" aria-label="账号入口">
+            <button class="auth-tab is-active" type="button" data-auth-tab="login">登录</button>
+            <button class="auth-tab" type="button" data-auth-tab="register">注册</button>
+          </div>
+          <form id="login-form" class="login-form auth-form is-active">
             <label>邮箱<input id="login-email" type="email" placeholder="name@example.com" autocomplete="email" required /></label>
-            <button class="primary-button" type="submit">开始学习 <span>→</span></button>
+            <label>密码<input id="login-password" type="password" placeholder="输入密码" autocomplete="current-password" required /></label>
+            <p class="auth-message" id="login-message" role="status"></p>
+            <button class="primary-button" type="submit">登录学习空间 <span>→</span></button>
           </form>
-          <p class="privacy-note">体验版会把学习信息保存在当前浏览器中。</p>
+          <form id="register-form" class="login-form auth-form">
+            <label>昵称<input id="register-name" type="text" placeholder="例如：小雨" autocomplete="name" required /></label>
+            <label>邮箱<input id="register-email" type="email" placeholder="name@example.com" autocomplete="email" required /></label>
+            <label>密码<input id="register-password" type="password" placeholder="至少 6 位" minlength="6" autocomplete="new-password" required /></label>
+            <p class="auth-message" id="register-message" role="status"></p>
+            <button class="primary-button" type="submit">注册并开始评估 <span>✦</span></button>
+          </form>
+          <p class="privacy-note">当前版本的账号和学习记录保存在本浏览器中。</p>
         </div>
       </section>
 
@@ -94,6 +106,7 @@
             <button class="nav-item" data-view="reading"><span>▤</span>英文读物</button>
             <button class="nav-item" data-view="words"><span>Aa</span>背诵单词</button>
             <button class="nav-item" data-view="quiz"><span>✓</span>考单词</button>
+            <button class="nav-item" data-view="wrongbook"><span>!</span>错题本 <b id="wrong-count">0</b></button>
             <button class="nav-item" data-view="intensive"><span>⌕</span>精细阅读</button>
           </nav>
           <div class="sidebar-profile"><div class="avatar" id="sidebar-avatar">L</div><div><strong id="sidebar-name">Learner</strong><small id="sidebar-level">B1 · 学习中</small></div><button id="logout-button" title="退出登录">↗</button></div>
@@ -123,14 +136,14 @@
           <section class="view intensive-view" id="intensive-view">
             <div class="reader-topbar"><button class="back-button" id="reader-back">← 返回今日学习</button><div><span>精读进度</span><div class="mini-progress"><i></i></div><strong>36%</strong></div></div>
             <div class="reader-layout">
-              <aside class="reader-info"><p class="eyebrow">GUIDED READING</p><span class="pill" id="article-level">B1 · 约 6 分钟</span><h2>Why Sleep Matters More Than We Think</h2><p>点击任意带下划线的单词，查看释义、注解和读音。点击原文空白处关闭单词卡片。</p><div class="article-meta"><span>主题<br /><strong>健康与科学</strong></span><span>词数<br /><strong>246</strong></span></div></aside>
+              <aside class="reader-info"><p class="eyebrow">GUIDED READING</p><span class="pill" id="article-level">B1 · 约 6 分钟</span><h2>Why Sleep Matters More Than We Think</h2><p>正文中的每个英文词都可以点击。词卡会完整显示词义、注解和读音，点击原文空白处即可关闭。</p><div class="article-meta"><span>主题<br /><strong>健康与科学</strong></span><span>词数<br /><strong>246</strong></span></div></aside>
               <article class="reading-paper" id="reading-paper">
                 <div class="paper-heading"><span>01</span><div><small>HEALTH & SCIENCE</small><h3>The quiet power of sleep</h3></div></div>
-                <p>For many people, sleep is the first thing they <button class="word" data-word="sacrifice">sacrifice</button> when life becomes busy. Yet scientists increasingly describe sleep as an <button class="word" data-word="essential">essential</button> biological process rather than a passive break from the day.</p>
-                <p>During deep sleep, the brain does not simply switch off. It <button class="word" data-word="consolidates">consolidates</button> memories, sorts new information and removes waste that has accumulated during waking hours. This nightly maintenance helps us think clearly and respond to difficult situations with greater <button class="word" data-word="resilience">resilience</button>.</p>
+                <p>For many people, sleep is the first thing they sacrifice when life becomes busy. Yet scientists increasingly describe sleep as an essential biological process rather than a passive break from the day.</p>
+                <p>During deep sleep, the brain does not simply switch off. It consolidates memories, sorts new information and removes waste that has accumulated during waking hours. This nightly maintenance helps us think clearly and respond to difficult situations with greater resilience.</p>
                 <blockquote>“Sleep is not time lost. It is preparation for everything that follows.”</blockquote>
-                <p>A consistent routine can be more <button class="word" data-word="beneficial">beneficial</button> than trying to catch up at the weekend. Small habits—such as dimming lights, avoiding late caffeine and putting phones away—send the body a reliable signal that it is time to rest.</p>
-                <p>The goal is not perfect sleep every night. It is to create the <button class="word" data-word="conditions">conditions</button> in which good sleep becomes more likely, and to treat rest as part of a healthy life rather than a reward earned after exhaustion.</p>
+                <p>A consistent routine can be more beneficial than trying to catch up at the weekend. Small habits—such as dimming lights, avoiding late caffeine and putting phones away—send the body a reliable signal that it is time to rest.</p>
+                <p>The goal is not perfect sleep every night. It is to create the conditions in which good sleep becomes more likely, and to treat rest as part of a healthy life rather than a reward earned after exhaustion.</p>
               </article>
             </div>
             <div class="word-popover" id="word-popover" role="dialog" aria-modal="true" aria-live="polite">
@@ -141,6 +154,6 @@
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="app.js?v=20261105-v2"></script>
   </body>
 </html>

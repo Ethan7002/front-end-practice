@@ -1,171 +1,59 @@
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-
-const state = {
-  user: JSON.parse(localStorage.getItem("shiguang-user") || "null"),
-  step: 0,
-  audioContext: null,
+const $=(s,r=document)=>r.querySelector(s);const $$=(s,r=document)=>[...r.querySelectorAll(s)];
+const KEYS={accounts:"shiguang-accounts",session:"shiguang-session",legacy:"shiguang-user",wrong:"shiguang-wrongbook",chat:"shiguang-chat-messages"};
+const state={user:null,step:0,audioContext:null,quizIndex:0,quizScore:0,quizLocked:false,chatChannel:"public"};
+const wordNotes={
+ sacrifice:{phonetic:"/ˈsækrɪfaɪs/ · v.",meaning:"牺牲；舍弃",note:"指因为忙碌而主动减少或放弃睡眠时间。"},
+ essential:{phonetic:"/ɪˈsenʃl/ · adj.",meaning:"必不可少的；极其重要的",note:"表示睡眠是人体必需的生理过程，而不是可有可无的休息。"},
+ consolidates:{phonetic:"/kənˈsɒlɪdeɪts/ · v.",meaning:"巩固；使加强",note:"这里指大脑在睡眠中整理并加强新形成的记忆。"},
+ resilience:{phonetic:"/rɪˈzɪliəns/ · n.",meaning:"恢复力；适应力；韧性",note:"指面对压力或困难后恢复稳定状态的能力。"},
+ resilient:{phonetic:"/rɪˈzɪliənt/ · adj.",meaning:"有韧性的；能迅速恢复的",note:"常形容人或系统从困难中迅速恢复。"},
+ beneficial:{phonetic:"/ˌbenɪˈfɪʃl/ · adj.",meaning:"有益的；有帮助的",note:"常用搭配：be beneficial to，对……有益。"},
+ conditions:{phonetic:"/kənˈdɪʃənz/ · n.",meaning:"条件；环境",note:"本文指能够让良好睡眠更容易发生的生活环境和习惯。"}
 };
-
-const wordNotes = {
-  sacrifice: { phonetic: "/ˈsækrɪfaɪs/ · v.", meaning: "牺牲；舍弃", note: "指因为忙碌而主动减少或放弃睡眠时间。" },
-  essential: { phonetic: "/ɪˈsenʃl/ · adj.", meaning: "必不可少的；极其重要的", note: "表示睡眠是人体必需的生理过程，而不是可有可无的休息。" },
-  consolidates: { phonetic: "/kənˈsɒlɪdeɪts/ · v.", meaning: "巩固；使加强", note: "这里指大脑在睡眠中整理并加强新形成的记忆。" },
-  resilience: { phonetic: "/rɪˈzɪliəns/ · n.", meaning: "恢复力；适应力；韧性", note: "指面对压力或困难后恢复稳定状态的能力。" },
-  beneficial: { phonetic: "/ˌbenɪˈfɪʃl/ · adj.", meaning: "有益的；有帮助的", note: "常用搭配：be beneficial to，对……有益。" },
-  conditions: { phonetic: "/kənˈdɪʃənz/ · n.", meaning: "条件；环境", note: "本文指能够让良好睡眠更容易发生的生活环境和习惯。" },
-};
-
-const levelContent = {
-  A1: ["基础问候练习", "看视频学日常动作", "认识身边的 8 个词"],
-  A2: ["咖啡店情景对话", "3 分钟生活短片", "读懂一封简单邮件"],
-  B1: ["表达观点的聊天练习", "TED-Ed 精选短片", "精读：睡眠的力量"],
-  B2: ["讨论科技与生活", "新闻英语深度听力", "精读：注意力经济"],
-  C1: ["学术话题观点辩论", "原速访谈与笔记", "精读：行为与决策"],
-  C2: ["高阶修辞与表达", "无字幕演讲分析", "评论文章批判性阅读"],
-};
-
-function showScreen(id) {
-  $$(".screen").forEach((screen) => screen.classList.toggle("is-active", screen.id === id));
-  window.scrollTo(0, 0);
-}
-
-function sound(type = "tap") {
-  try {
-    state.audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
-    const ctx = state.audioContext;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const map = { tap: [430, .035], next: [560, .06], success: [720, .11], error: [185, .1], complete: [880, .18] };
-    const [frequency, duration] = map[type] || map.tap;
-    osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-    if (type === "success" || type === "complete") osc.frequency.exponentialRampToValueAtTime(frequency * 1.45, ctx.currentTime + duration);
-    osc.type = type === "error" ? "sawtooth" : "sine";
-    gain.gain.setValueAtTime(.0001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.055, ctx.currentTime + .008);
-    gain.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + duration);
-    osc.connect(gain).connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + duration + .02);
-  } catch (_) {}
-}
-
-function speak(word) {
-  if (!("speechSynthesis" in window)) return;
-  speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(word);
-  utterance.lang = "en-GB"; utterance.rate = .82;
-  speechSynthesis.speak(utterance);
-}
-
-$("#login-form").addEventListener("submit", (event) => {
-  event.preventDefault(); sound("next");
-  state.user = { name: $("#login-name").value.trim(), email: $("#login-email").value.trim() };
-  showScreen("onboarding-screen"); updateStep();
-});
-
-function updateStep() {
-  $$(".onboarding-step").forEach((el, index) => el.classList.toggle("is-active", index === state.step));
-  $("#step-label").textContent = `0${state.step + 1} / 03`;
-  $("#progress-bar").style.width = `${((state.step + 1) / 3) * 100}%`;
-  $("#prev-step").classList.toggle("is-hidden", state.step === 0);
-  $("#next-step").innerHTML = state.step === 2 ? "生成我的学习空间 <span>✦</span>" : "继续 <span>→</span>";
-}
-
-$("#next-step").addEventListener("click", () => {
-  const current = $(`.onboarding-step[data-step="${state.step}"]`);
-  const required = $("input[required]", current);
-  if (required && !$( `input[name="${required.name}"]:checked`, current)) {
-    sound("error"); current.animate([{transform:"translateX(-5px)"},{transform:"translateX(5px)"},{transform:"none"}], {duration:260}); return;
-  }
-  if (state.step < 2) { state.step += 1; sound("next"); updateStep(); return; }
-  const data = new FormData($("#profile-form"));
-  state.user = { ...state.user, age: data.get("age"), level: data.get("level"), goals: data.getAll("goal"), ielts: $("#ielts-score").value };
-  localStorage.setItem("shiguang-user", JSON.stringify(state.user));
-  sound("complete"); setupDashboard(); showScreen("dashboard-screen");
-});
-
-$("#prev-step").addEventListener("click", () => { state.step = Math.max(0, state.step - 1); sound("tap"); updateStep(); });
-$$('.choice-grid input').forEach((input) => input.addEventListener("change", () => sound("tap")));
-
-function setupDashboard() {
-  const user = state.user || { name: "学习者", level: "B1", age: "18–24岁", goals: [] };
-  const level = user.level || "B1";
-  $("#sidebar-name").textContent = user.name;
-  $("#sidebar-avatar").textContent = (user.name || "L").slice(0, 1).toUpperCase();
-  $("#sidebar-level").textContent = `${level} · 学习中`;
-  $("#greeting").textContent = `${greeting()}，${user.name}`;
-  $("#level-pill").textContent = `${level} · ${levelName(level)}`;
-  $("#article-level").textContent = `${level} · 约 6 分钟`;
-  $("#profile-summary").textContent = `${user.age || ""}${user.ielts ? ` · IELTS ${user.ielts}` : ""}`;
-  $("#plan-copy").textContent = `根据你的 ${level} 水平和“${(user.goals || []).join("、") || "综合英语"}”目标，我们准备了约 25 分钟的内容。`;
-  $("#today-date").textContent = new Intl.DateTimeFormat("zh-CN", { month: "long", day: "numeric", weekday: "long" }).format(new Date()).toUpperCase();
-  const modules = ["chat", "video", "intensive"];
-  $("#recommendation-grid").innerHTML = levelContent[level].map((title, index) => `
-    <article class="recommend-card" data-icon="${["✦","▶","Aa"][index]}">
-      <div class="card-top"><span>${["英语聊天","视频学习","精细阅读"][index]}</span><span class="time">${["8","6","11"][index]} 分钟</span></div>
-      <h4>${title}</h4><p>${["在模拟情景中练习自然表达，随时查看建议。","短视频、关键词和跟读训练组合学习。","边读边查词，把文章真正读懂。 "][index]}</p>
-      <button data-open="${modules[index]}">开始 →</button>
-    </article>`).join("");
-}
-
-function greeting() { const h = new Date().getHours(); return h < 11 ? "早上好" : h < 18 ? "下午好" : "晚上好"; }
-function levelName(level) { return ({A1:"BEGINNER",A2:"ELEMENTARY",B1:"INTERMEDIATE",B2:"UPPER INTERMEDIATE",C1:"ADVANCED",C2:"PROFICIENT"})[level]; }
-
-function openView(name) {
-  $$(".view").forEach((view) => view.classList.remove("is-active"));
-  $$(".nav-item").forEach((item) => item.classList.toggle("is-active", item.dataset.view === name));
-  if (name === "home") $("#home-view").classList.add("is-active");
-  else if (name === "intensive") $("#intensive-view").classList.add("is-active");
-  else { $("#module-view").classList.add("is-active"); renderModule(name); }
-  $(".sidebar").classList.remove("is-open"); window.scrollTo(0, 0); sound("tap");
-}
-
-document.addEventListener("click", (event) => {
-  const opener = event.target.closest("[data-open]"); if (opener) openView(opener.dataset.open);
-});
-$$('.nav-item').forEach((button) => button.addEventListener("click", () => openView(button.dataset.view)));
-$("#back-home").addEventListener("click", () => openView("home"));
-$("#reader-back").addEventListener("click", () => { closeWord(); openView("home"); });
-$("#mobile-menu").addEventListener("click", () => $(".sidebar").classList.toggle("is-open"));
-$("#logout-button").addEventListener("click", () => { closeWord(); showScreen("auth-screen"); });
-$$('[data-speak]').forEach((button) => button.addEventListener("click", () => { sound("tap"); speak(button.dataset.speak); }));
-
-const moduleData = {
-  chat: ["英语聊天", "让表达变成一种习惯", ["餐厅点餐：自然提出要求", "表达不同意见，但保持礼貌", "一分钟自我介绍挑战"]],
-  video: ["视频学习", "听懂真实语速里的英语", ["预习 6 个关键词", "观看 3 分钟精选短片", "逐句跟读并录下自己的声音"]],
-  reading: ["英文读物", "从适合你的故事开始", ["分级短篇：The Last Leaf", "人物传记：A Curious Mind", "科普阅读：How Trees Talk"]],
-  words: ["背诵单词", "不只记住，还要真正会用", ["今日新词 10 个", "昨日复习 8 个", "易错词收藏夹"]],
-  quiz: ["单词挑战", "用一场小游戏检验记忆", []],
-};
-
-function renderModule(name) {
-  const [title, subtitle, cards] = moduleData[name] || moduleData.chat;
-  if (name === "quiz") {
-    $("#module-content").innerHTML = `<div class="module-hero"><p class="eyebrow">WORD CHALLENGE</p><h2>${title}</h2><p>${subtitle}。答对会获得经验值和清脆提示音。</p></div><article class="activity-card quiz-box"><span class="pill">1 / 5</span><div class="quiz-word">resilient</div><p>/rɪˈzɪliənt/ · adjective</p><div class="quiz-options"><button data-answer="wrong">华丽的</button><button data-answer="correct">有韧性的</button><button data-answer="wrong">谨慎的</button><button data-answer="wrong">短暂的</button></div></article>`;
-    $$("[data-answer]").forEach((button) => button.addEventListener("click", quizAnswer)); return;
-  }
-  $("#module-content").innerHTML = `<div class="module-hero"><p class="eyebrow">${name.toUpperCase()} PRACTICE</p><h2>${title}</h2><p>${subtitle}。内容已经根据你的 ${state.user?.level || "B1"} 水平进行调整。</p></div><div class="activity-grid">${cards.map((card,index)=>`<article class="activity-card"><span class="pill">${String(index+1).padStart(2,"0")}</span><h3>${card}</h3><p>${index===0?"今天的推荐任务，完成后获得 20 XP。":"可随时开始，学习进度会自动保存。"}</p><button>${name === "video" ? "▶ 播放" : "开始练习"}</button></article>`).join("")}</div>`;
-  $$(".activity-card button").forEach(button => button.addEventListener("click", () => { sound("success"); button.textContent = "✓ 已加入今日计划"; button.style.background = "#db8b69"; }));
-}
-
-function quizAnswer(event) {
-  const correct = event.currentTarget.dataset.answer === "correct";
-  event.currentTarget.classList.add(correct ? "correct" : "wrong"); sound(correct ? "success" : "error");
-  if (correct) { const xp = document.createElement("span"); xp.className = "xp-burst"; xp.textContent = "+10 XP"; xp.style.left = `${event.clientX}px`; xp.style.top = `${event.clientY}px`; document.body.append(xp); setTimeout(()=>xp.remove(),1000); }
-}
-
-function openWord(button) {
-  const word = button.dataset.word; const data = wordNotes[word]; if (!data) return;
-  $("#popover-word").textContent = word; $("#popover-phonetic").textContent = data.phonetic; $("#popover-meaning").textContent = data.meaning; $("#popover-note").textContent = data.note;
-  const rect = button.getBoundingClientRect(); const popover = $("#word-popover"); popover.classList.add("is-open"); document.body.classList.add("word-open");
-  const width = Math.min(360, window.innerWidth - 30); let left = rect.left + rect.width / 2 - width / 2; left = Math.max(15, Math.min(left, window.innerWidth - width - 15));
-  let top = rect.bottom + 14; if (top + 340 > window.innerHeight) top = Math.max(15, rect.top - 330);
-  popover.style.left = `${left}px`; popover.style.top = `${top}px`; popover.dataset.word = word; sound("tap");
-}
-function closeWord() { $("#word-popover").classList.remove("is-open"); document.body.classList.remove("word-open"); }
-$$('.word').forEach((button) => button.addEventListener("click", (event) => { event.stopPropagation(); openWord(button); }));
-$("#reading-paper").addEventListener("click", (event) => { if (!event.target.closest(".word")) closeWord(); });
-$("#popover-close").addEventListener("click", closeWord);
-$("#popover-audio").addEventListener("click", () => speak($("#word-popover").dataset.word));
-window.addEventListener("resize", closeWord);
-
-if (state.user?.level) { setupDashboard(); showScreen("dashboard-screen"); } else { showScreen("auth-screen"); }
+const basicMeanings={a:"一个；一种",accumulated:"积累的",after:"在……之后",an:"一个；一种",and:"和；并且",as:"作为；如同",at:"在",avoiding:"避免",away:"离开",be:"是；成为",becomes:"变得",biological:"生物的",body:"身体",brain:"大脑",break:"休息；中断",busy:"忙碌的",caffeine:"咖啡因",can:"能够",catch:"赶上；弥补",clearly:"清楚地",consistent:"持续一致的",consolidates:"巩固；加强",create:"创造；形成",day:"一天；白天",deep:"深度的",describe:"描述",difficult:"困难的",dimming:"调暗",does:"做；用于强调",during:"在……期间",earned:"赢得的",essential:"必不可少的",every:"每一个",everything:"一切",exhaustion:"精疲力竭",first:"第一；首先",follows:"随后发生",for:"为了；对于",from:"从；来自",goal:"目标",good:"好的",greater:"更大的",habits:"习惯",has:"拥有；已经",health:"健康",healthy:"健康的",helps:"帮助",hours:"小时",in:"在……里面",increasingly:"越来越多地",information:"信息",is:"是",it:"它",late:"晚的；迟的",life:"生活；生命",lights:"灯光",likely:"可能的",lost:"失去的",maintenance:"维护；保养",many:"许多",matters:"重要；有影响",memories:"记忆",more:"更多；更",new:"新的",night:"夜晚",nightly:"每晚的",not:"不",of:"……的",off:"关闭；离开",part:"部分",passive:"被动的",people:"人们",perfect:"完美的",phones:"手机",power:"力量",preparation:"准备",process:"过程",putting:"放置",quiet:"安静的",rather:"而不是；相当",reliable:"可靠的",removes:"移除",respond:"回应；反应",rest:"休息",reward:"奖励",routine:"日常规律",sacrifice:"牺牲；舍弃",science:"科学",scientists:"科学家",send:"发送；传递",signal:"信号",simply:"仅仅；简单地",situations:"情况；情境",sleep:"睡眠；睡觉",small:"小的",sorts:"整理；分类",such:"这样的",switch:"切换；关闭",than:"比；而不是",that:"那个；引导从句",the:"这个；特指",they:"他们；它们",thing:"事情；事物",think:"思考；认为",this:"这个",time:"时间",to:"到；去；用于不定式",treat:"对待；处理",trying:"尝试",up:"向上；完全地",us:"我们（宾格）",waking:"清醒的",waste:"废物；浪费",we:"我们",weekend:"周末",when:"当……时",which:"哪一个；引导从句",why:"为什么",with:"和；带有",yet:"然而；仍然"};
+const levelContent={A1:["基础问候练习","看视频学日常动作","认识身边的 8 个词"],A2:["咖啡店情景对话","3 分钟生活短片","读懂一封简单邮件"],B1:["表达观点的聊天练习","TED-Ed 精选短片","精读：睡眠的力量"],B2:["讨论科技与生活","新闻英语深度听力","精读：注意力经济"],C1:["学术话题观点辩论","原速访谈与笔记","精读：行为与决策"],C2:["高阶修辞与表达","无字幕演讲分析","评论文章批判性阅读"]};
+const quizQuestions=[
+ {word:"resilient",phonetic:"/rɪˈzɪliənt/ · adjective",options:["华丽的","有韧性的","谨慎的","短暂的"],answer:"有韧性的",definition:"能够从困难、压力或变化中迅速恢复。",example:"Children can be remarkably resilient after change."},
+ {word:"essential",phonetic:"/ɪˈsenʃl/ · adjective",options:["必不可少的","偶然的","过时的","昂贵的"],answer:"必不可少的",definition:"极其重要或完全必要的。",example:"Good sleep is essential for clear thinking."},
+ {word:"beneficial",phonetic:"/ˌbenɪˈfɪʃl/ · adjective",options:["有害的","有益的","普通的","复杂的"],answer:"有益的",definition:"能够带来好处或积极结果的。",example:"Regular reading is beneficial to language learners."},
+ {word:"consolidate",phonetic:"/kənˈsɒlɪdeɪt/ · verb",options:["分散","巩固","忘记","推迟"],answer:"巩固",definition:"使某事物更牢固、更强或更确定。",example:"Sleep helps consolidate newly formed memories."},
+ {word:"sacrifice",phonetic:"/ˈsækrɪfaɪs/ · verb",options:["庆祝","测量","牺牲；舍弃","恢复"],answer:"牺牲；舍弃",definition:"为了其他事情而放弃重要或有价值的东西。",example:"Do not sacrifice sleep to finish minor tasks."}
+];
+const chatUsers=[{id:"public",name:"公共学习群",avatar:"群",status:"4 位学习者在线",color:"#f4bd3e"},{id:"emma",name:"Emma",avatar:"E",status:"B2 · 英国",color:"#6eb5e8"},{id:"leo",name:"Leo",avatar:"L",status:"B1 · 新加坡",color:"#ef6f61"},{id:"sofia",name:"Sofia",avatar:"S",status:"C1 · 西班牙",color:"#a78bdb"}];
+function readJSON(k,f){try{return JSON.parse(localStorage.getItem(k)||"")||f}catch{return f}}function writeJSON(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function loadSession(){const e=localStorage.getItem(KEYS.session),a=readJSON(KEYS.accounts,[]);state.user=a.find(x=>x.email===e)||null;if(!state.user){const l=readJSON(KEYS.legacy,null);if(l?.level)state.user=l}}
+function showScreen(id){$$('.screen').forEach(x=>x.classList.toggle('is-active',x.id===id));scrollTo(0,0)}
+function sound(type="tap"){try{state.audioContext||=new(AudioContext||webkitAudioContext)();const c=state.audioContext,o=c.createOscillator(),g=c.createGain(),[f,d]=({tap:[430,.035],next:[560,.06],success:[720,.11],error:[185,.1],complete:[880,.18]})[type]||[430,.035];o.frequency.setValueAtTime(f,c.currentTime);if(["success","complete"].includes(type))o.frequency.exponentialRampToValueAtTime(f*1.45,c.currentTime+d);o.type=type==="error"?"sawtooth":"sine";g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.055,c.currentTime+.008);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+d);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+d+.02)}catch{}}
+function speak(w){if(!("speechSynthesis"in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(w);u.lang="en-GB";u.rate=.82;speechSynthesis.speak(u)}
+function switchAuth(tab){$$('.auth-tab').forEach(b=>b.classList.toggle('is-active',b.dataset.authTab===tab));$$('.auth-form').forEach(f=>f.classList.toggle('is-active',f.id===`${tab}-form`));sound('tap')}
+$$('[data-auth-tab]').forEach(b=>b.addEventListener('click',()=>switchAuth(b.dataset.authTab)));
+$('#register-form').addEventListener('submit',e=>{e.preventDefault();const name=$('#register-name').value.trim(),email=$('#register-email').value.trim().toLowerCase(),password=$('#register-password').value,accounts=readJSON(KEYS.accounts,[]);if(accounts.some(a=>a.email===email)){$('#register-message').textContent='这个邮箱已经注册，请直接登录。';sound('error');return}state.user={name,email,password,createdAt:Date.now()};accounts.push(state.user);writeJSON(KEYS.accounts,accounts);localStorage.setItem(KEYS.session,email);$('#register-message').textContent='注册成功，正在进入能力评估…';sound('complete');showScreen('onboarding-screen');updateStep()});
+$('#login-form').addEventListener('submit',e=>{e.preventDefault();const email=$('#login-email').value.trim().toLowerCase(),password=$('#login-password').value,account=readJSON(KEYS.accounts,[]).find(a=>a.email===email&&a.password===password);if(!account){$('#login-message').textContent='邮箱或密码不正确，也可以先注册新账号。';sound('error');return}state.user=account;localStorage.setItem(KEYS.session,email);sound('next');if(account.level){setupDashboard();showScreen('dashboard-screen')}else{showScreen('onboarding-screen');updateStep()}});
+function updateAccount(u){if(!u?.email){writeJSON(KEYS.legacy,u);return}const a=readJSON(KEYS.accounts,[]),i=a.findIndex(x=>x.email===u.email);if(i>=0)a[i]=u;else a.push(u);writeJSON(KEYS.accounts,a);localStorage.setItem(KEYS.session,u.email)}
+function updateStep(){$$('.onboarding-step').forEach((e,i)=>e.classList.toggle('is-active',i===state.step));$('#step-label').textContent=`0${state.step+1} / 03`;$('#progress-bar').style.width=`${(state.step+1)/3*100}%`;$('#prev-step').classList.toggle('is-hidden',state.step===0);$('#next-step').innerHTML=state.step===2?'生成我的学习空间 <span>✦</span>':'继续 <span>→</span>'}
+$('#next-step').addEventListener('click',()=>{const c=$(`.onboarding-step[data-step="${state.step}"]`),r=$('input[required]',c);if(r&&!$(`input[name="${r.name}"]:checked`,c)){sound('error');c.animate([{transform:'translateX(-5px)'},{transform:'translateX(5px)'},{transform:'none'}],{duration:260});return}if(state.step<2){state.step++;sound('next');updateStep();return}const d=new FormData($('#profile-form'));state.user={...state.user,age:d.get('age'),level:d.get('level'),goals:d.getAll('goal'),ielts:$('#ielts-score').value};updateAccount(state.user);writeJSON(KEYS.legacy,state.user);sound('complete');setupDashboard();showScreen('dashboard-screen')});
+$('#prev-step').addEventListener('click',()=>{state.step=Math.max(0,state.step-1);sound('tap');updateStep()});$$('.choice-grid input').forEach(i=>i.addEventListener('change',()=>sound('tap')));
+function wrongbook(){return readJSON(`${KEYS.wrong}:${state.user?.email||'guest'}`,[])}function saveWrongbook(v){writeJSON(`${KEYS.wrong}:${state.user?.email||'guest'}`,v);updateWrongCount()}function updateWrongCount(){$('#wrong-count').textContent=wrongbook().length}
+function setupDashboard(){const u=state.user||{name:'学习者',level:'B1',age:'18–24岁',goals:[]},l=u.level||'B1';$('#sidebar-name').textContent=u.name;$('#sidebar-avatar').textContent=(u.name||'L').slice(0,1).toUpperCase();$('#sidebar-level').textContent=`${l} · 学习中`;$('#greeting').textContent=`${greeting()}，${u.name}`;$('#level-pill').textContent=`${l} · ${levelName(l)}`;$('#article-level').textContent=`${l} · 约 6 分钟`;$('#profile-summary').textContent=`${u.age||''}${u.ielts?` · IELTS ${u.ielts}`:''}`;$('#plan-copy').textContent=`根据你的 ${l} 水平和“${(u.goals||[]).join('、')||'综合英语'}”目标，我们准备了约 25 分钟的内容。`;$('#today-date').textContent=new Intl.DateTimeFormat('zh-CN',{month:'long',day:'numeric',weekday:'long'}).format(new Date()).toUpperCase();updateWrongCount();const m=['chat','video','intensive'];$('#recommendation-grid').innerHTML=levelContent[l].map((t,i)=>`<article class="recommend-card" data-icon="${['✦','▶','Aa'][i]}"><div class="card-top"><span>${['英语聊天','视频学习','精细阅读'][i]}</span><span class="time">${['8','6','11'][i]} 分钟</span></div><h4>${t}</h4><p>${['进入学习社区，与不同学习者练习英语。','短视频、关键词和跟读训练组合学习。','边读边查词，正文每个词都可以点击。'][i]}</p><button data-open="${m[i]}">开始 →</button></article>`).join('')}
+function greeting(){const h=new Date().getHours();return h<11?'早上好':h<18?'下午好':'晚上好'}function levelName(l){return({A1:'BEGINNER',A2:'ELEMENTARY',B1:'INTERMEDIATE',B2:'UPPER INTERMEDIATE',C1:'ADVANCED',C2:'PROFICIENT'})[l]}
+function openView(name){closeWord();$$('.view').forEach(v=>v.classList.remove('is-active'));$$('.nav-item').forEach(i=>i.classList.toggle('is-active',i.dataset.view===name));if(name==='home')$('#home-view').classList.add('is-active');else if(name==='intensive')$('#intensive-view').classList.add('is-active');else{$('#module-view').classList.add('is-active');renderModule(name)}$('.sidebar').classList.remove('is-open');scrollTo(0,0);sound('tap')}
+document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(o)openView(o.dataset.open)});$$('.nav-item').forEach(b=>b.addEventListener('click',()=>openView(b.dataset.view)));$('#back-home').addEventListener('click',()=>openView('home'));$('#reader-back').addEventListener('click',()=>openView('home'));$('#mobile-menu').addEventListener('click',()=>$('.sidebar').classList.toggle('is-open'));$('#logout-button').addEventListener('click',()=>{localStorage.removeItem(KEYS.session);state.user=null;closeWord();switchAuth('login');showScreen('auth-screen')});$$('[data-speak]').forEach(b=>b.addEventListener('click',()=>{sound('tap');speak(b.dataset.speak)}));
+const moduleData={video:['视频学习','听懂真实语速里的英语',['预习 6 个关键词','观看 3 分钟精选短片','逐句跟读并录下自己的声音']],reading:['英文读物','从适合你的故事开始',['分级短篇：The Last Leaf','人物传记：A Curious Mind','科普阅读：How Trees Talk']],words:['背诵单词','不只记住，还要真正会用',['今日新词 10 个','昨日复习 8 个','易错词收藏夹']]};
+function renderModule(n){if(n==='quiz'){state.quizIndex=0;state.quizScore=0;renderQuiz();return}if(n==='wrongbook'){renderWrongbook();return}if(n==='chat'){renderChat();return}const[t,s,c]=moduleData[n]||moduleData.words;$('#module-content').innerHTML=`<div class="module-hero"><p class="eyebrow">${n.toUpperCase()} PRACTICE</p><h2>${t}</h2><p>${s}。内容已经根据你的 ${state.user?.level||'B1'} 水平进行调整。</p></div><div class="activity-grid">${c.map((x,i)=>`<article class="activity-card"><span class="pill">${String(i+1).padStart(2,'0')}</span><h3>${x}</h3><p>${i===0?'今天的推荐任务，完成后获得 20 XP。':'可随时开始，学习进度会自动保存。'}</p><button>${n==='video'?'▶ 播放':'开始练习'}</button></article>`).join('')}</div>`;$$('.activity-card button').forEach(b=>b.addEventListener('click',()=>{sound('success');b.textContent='✓ 已加入今日计划';b.style.background='#ef6f61'}))}
+function renderQuiz(){const q=quizQuestions[state.quizIndex];state.quizLocked=false;$('#module-content').innerHTML=`<div class="module-hero"><p class="eyebrow">WORD CHALLENGE</p><h2>单词挑战</h2><p>每道题作答后都会显示完整单词解释；答错的词会自动进入错题本。</p></div><article class="activity-card quiz-box"><span class="pill">${state.quizIndex+1} / ${quizQuestions.length}</span><div class="quiz-word">${q.word}</div><p>${q.phonetic}</p><button class="quiz-sound audio-circle" aria-label="播放 ${q.word}">◖</button><div class="quiz-options">${q.options.map(o=>`<button data-quiz-option="${o}">${o}</button>`).join('')}</div><div id="quiz-explanation"></div></article>`;$('.quiz-sound').addEventListener('click',()=>speak(q.word));$$('[data-quiz-option]').forEach(b=>b.addEventListener('click',()=>answerQuiz(b.dataset.quizOption,b)))}
+function answerQuiz(choice,button){if(state.quizLocked)return;state.quizLocked=true;const q=quizQuestions[state.quizIndex],ok=choice===q.answer;button.classList.add(ok?'correct':'wrong');$$('[data-quiz-option]').forEach(b=>{b.disabled=true;if(b.dataset.quizOption===q.answer)b.classList.add('correct-answer')});if(ok){state.quizScore++;sound('success');showXP(button)}else{sound('error');const a=wrongbook(),old=a.find(x=>x.word===q.word);if(old)old.count=(old.count||1)+1;else a.push({...q,count:1,addedAt:Date.now()});saveWrongbook(a)}$('#quiz-explanation').innerHTML=`<section class="quiz-feedback ${ok?'is-correct':'is-wrong'}"><div class="feedback-status">${ok?'✓ 回答正确':'✕ 回答错误'}</div><div class="feedback-word"><div><strong>${q.word}</strong><span>${q.phonetic}</span></div><button class="audio-circle" id="feedback-audio">◖</button></div><p class="feedback-meaning">${q.answer}｜${q.definition}</p><p class="feedback-example">${q.example}</p><button class="primary-button next-question" id="next-question">${state.quizIndex===quizQuestions.length-1?'查看成绩':'下一题'}<span>→</span></button></section>`;$('#feedback-audio').addEventListener('click',()=>speak(q.word));$('#next-question').addEventListener('click',nextQuiz)}
+function nextQuiz(){if(state.quizIndex<quizQuestions.length-1){state.quizIndex++;sound('next');renderQuiz();return}$('#module-content').innerHTML=`<div class="module-hero"><p class="eyebrow">CHALLENGE COMPLETE</p><h2>完成本轮挑战</h2><p>你答对了 ${state.quizScore} / ${quizQuestions.length} 题，错题已经自动保存。</p></div><div class="quiz-summary"><strong>${state.quizScore*20}%</strong><h3>${state.quizScore===quizQuestions.length?'全部正确，太棒了！':'去错题本再巩固一次吧'}</h3><div><button class="primary-button" id="retry-quiz">重新挑战 <span>↻</span></button><button class="light-outline" id="open-wrongbook">查看错题本</button></div></div>`;$('#retry-quiz').addEventListener('click',()=>{state.quizIndex=0;state.quizScore=0;renderQuiz()});$('#open-wrongbook').addEventListener('click',()=>openView('wrongbook'))}
+function showXP(el){const r=el.getBoundingClientRect(),x=document.createElement('span');x.className='xp-burst';x.textContent='+10 XP';x.style.left=`${r.left+r.width/2}px`;x.style.top=`${r.top}px`;document.body.append(x);setTimeout(()=>x.remove(),1000)}
+function renderWrongbook(){const a=wrongbook();$('#module-content').innerHTML=`<div class="module-hero"><p class="eyebrow">REVIEW & IMPROVE</p><h2>错题本</h2><p>回顾做错的单词，查看解释并重新发音练习。</p></div>${a.length?`<div class="wrongbook-grid">${a.map((x,i)=>`<article class="wrong-card"><div class="wrong-top"><span>错 ${x.count||1} 次</span><button data-remove-wrong="${i}" aria-label="移除 ${x.word}">×</button></div><h3>${x.word}</h3><small>${x.phonetic}</small><p><strong>${x.answer}</strong> · ${x.definition}</p><blockquote>${x.example}</blockquote><button class="review-sound" data-review-speak="${x.word}">◖ 播放读音</button></article>`).join('')}</div>`:`<div class="empty-state"><span>✓</span><h3>错题本还是空的</h3><p>完成单词挑战后，答错的词会自动出现在这里。</p><button class="primary-button" id="start-quiz">开始单词挑战 <span>→</span></button></div>`}`;$$('[data-review-speak]').forEach(b=>b.addEventListener('click',()=>speak(b.dataset.reviewSpeak)));$$('[data-remove-wrong]').forEach(b=>b.addEventListener('click',()=>{const n=wrongbook();n.splice(Number(b.dataset.removeWrong),1);saveWrongbook(n);renderWrongbook()}));$('#start-quiz')?.addEventListener('click',()=>openView('quiz'))}
+function seedMessages(){const e=readJSON(KEYS.chat,null);if(e)return e;const m=[{id:1,channel:'public',sender:'Emma',avatar:'E',text:'Hi everyone! What did you learn today?',time:'20:12'},{id:2,channel:'public',sender:'Leo',avatar:'L',text:'I learned the word resilient. It is a great word!',time:'20:14'},{id:3,channel:'emma',sender:'Emma',avatar:'E',text:'Hello! We can practise English together here.',time:'20:16'},{id:4,channel:'leo',sender:'Leo',avatar:'L',text:'Hey! Tell me about your learning goal.',time:'20:17'},{id:5,channel:'sofia',sender:'Sofia',avatar:'S',text:'Hola! Would you like to discuss a short article?',time:'20:18'}];writeJSON(KEYS.chat,m);return m}
+const chatBus='BroadcastChannel'in window?new BroadcastChannel('shiguang-chat'):null;chatBus?.addEventListener('message',()=>{if($('.chat-shell'))renderChatMessages()});addEventListener('storage',e=>{if(e.key===KEYS.chat&&$('.chat-shell'))renderChatMessages()});
+function renderChat(){seedMessages();$('#module-content').innerHTML=`<div class="module-hero chat-hero"><p class="eyebrow">ENGLISH COMMUNITY</p><h2>英语学习聊天室</h2><p>选择公共学习群或学习伙伴，用英语进行交流。当前演示支持同一浏览器的多个标签页实时同步。</p></div><div class="chat-shell"><aside class="chat-contacts"><div class="contact-heading"><strong>聊天</strong><span>● 在线</span></div>${chatUsers.map(u=>`<button class="chat-contact ${u.id===state.chatChannel?'is-active':''}" data-chat-user="${u.id}"><span class="contact-avatar" style="--avatar:${u.color}">${u.avatar}</span><span><strong>${u.name}</strong><small>${u.status}</small></span></button>`).join('')}</aside><section class="chat-panel"><header id="chat-header"></header><div class="chat-messages" id="chat-messages"></div><form class="chat-compose" id="chat-form"><input id="chat-input" autocomplete="off" placeholder="用英语写一条消息…" required /><button type="submit">发送 ↗</button></form></section></div>`;$$('[data-chat-user]').forEach(b=>b.addEventListener('click',()=>{state.chatChannel=b.dataset.chatUser;renderChat()}));$('#chat-form').addEventListener('submit',sendChat);renderChatMessages()}
+function renderChatMessages(){const c=chatUsers.find(u=>u.id===state.chatChannel),m=seedMessages().filter(x=>x.channel===state.chatChannel);$('#chat-header').innerHTML=`<span class="contact-avatar" style="--avatar:${c.color}">${c.avatar}</span><div><strong>${c.name}</strong><small>${c.status}</small></div>`;$('#chat-messages').innerHTML=m.map(x=>`<div class="chat-message ${x.sender===state.user?.name?'is-mine':''}"><span class="message-avatar">${x.avatar}</span><div><small>${x.sender} · ${x.time}</small><p>${escapeHtml(x.text)}</p></div></div>`).join('');$('#chat-messages').scrollTop=$('#chat-messages').scrollHeight}
+function sendChat(e){e.preventDefault();const i=$('#chat-input'),t=i.value.trim();if(!t)return;const m=seedMessages(),n=state.user?.name||'我';m.push({id:Date.now(),channel:state.chatChannel,sender:n,avatar:n.slice(0,1).toUpperCase(),text:t,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});writeJSON(KEYS.chat,m);chatBus?.postMessage({type:'message'});i.value='';renderChatMessages();sound('next');if(state.chatChannel!=='public')setTimeout(()=>autoReply(state.chatChannel),700)}
+function autoReply(c){const u=chatUsers.find(x=>x.id===c),r={emma:'That sounds interesting! Can you tell me more?',leo:'Nice! Keep going—you are making progress.',sofia:'Good point. What new word did you use today?'},m=seedMessages();m.push({id:Date.now(),channel:c,sender:u.name,avatar:u.avatar,text:r[c],time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});writeJSON(KEYS.chat,m);chatBus?.postMessage({type:'message'});if(state.chatChannel===c&&$('.chat-shell')){renderChatMessages();sound('tap')}}
+function escapeHtml(v){return String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c])}
+function prepareClickableArticle(){$$('#reading-paper h3, #reading-paper p, #reading-paper blockquote').forEach(c=>{[...c.childNodes].forEach(n=>{if(n.nodeType!==Node.TEXT_NODE)return;const p=n.textContent.split(/([A-Za-z]+(?:'[A-Za-z]+)?)/g),f=document.createDocumentFragment();p.forEach(x=>{if(/^[A-Za-z]+(?:'[A-Za-z]+)?$/.test(x)){const b=document.createElement('button');b.type='button';b.className='word';b.dataset.word=x.toLowerCase();b.textContent=x;f.append(b)}else f.append(document.createTextNode(x))});n.replaceWith(f)})});$$('.word').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openWord(b)}))}
+function getWordData(w){if(wordNotes[w])return wordNotes[w];let m=basicMeanings[w];if(!m&&w.endsWith('s'))m=basicMeanings[w.slice(0,-1)];if(!m&&w.endsWith('ed'))m=basicMeanings[w.slice(0,-2)];if(!m&&w.endsWith('ing'))m=basicMeanings[w.slice(0,-3)];return{phonetic:'点击右侧按钮播放英式读音',meaning:m||'常用英语词汇；请结合当前句子理解',note:`在本文句子中，“${w}”与前后内容共同表达文章含义。`}}
+function openWord(b){const w=b.dataset.word,d=getWordData(w);$('#popover-word').textContent=w;$('#popover-phonetic').textContent=d.phonetic;$('#popover-meaning').textContent=d.meaning;$('#popover-note').textContent=d.note;const p=$('#word-popover');p.classList.add('is-open');p.dataset.word=w;document.body.classList.add('word-open');sound('tap')}function closeWord(){$('#word-popover').classList.remove('is-open');document.body.classList.remove('word-open')}
+$('#reading-paper').addEventListener('click',e=>{if(!e.target.closest('.word'))closeWord()});$('#popover-close').addEventListener('click',closeWord);$('#popover-audio').addEventListener('click',()=>speak($('#word-popover').dataset.word));document.addEventListener('keydown',e=>{if(e.key==='Escape')closeWord()});
+prepareClickableArticle();loadSession();if(state.user?.level){setupDashboard();showScreen('dashboard-screen')}else showScreen('auth-screen');

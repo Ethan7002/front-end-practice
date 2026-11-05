@@ -11,6 +11,8 @@ button { cursor: pointer; }
 .noise { position: fixed; inset: 0; z-index: 100; pointer-events: none; opacity: .15; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E"); }
 .screen { display: none; min-height: 100vh; }
 .screen.is-active { display: grid; animation: screen-in .55s ease both; }
+.dashboard-screen.is-active { animation: none; }
+.intensive-view.is-active { animation: none; }
 @keyframes screen-in { from { opacity: 0; transform: translateY(9px); } }
 .brand { display: inline-flex; align-items: center; gap: 11px; color: inherit; text-decoration: none; font-weight: 800; letter-spacing: .1em; }
 .brand-mark { display: grid; place-items: center; width: 38px; height: 38px; color: white; background: var(--forest); border-radius: 53% 47% 44% 56% / 47% 51% 49% 53%; }
@@ -146,4 +148,65 @@ body.word-open .reading-paper { filter: blur(4px); opacity: .55; }.word-popover 
 }
 @media (max-width: 700px) {
   .choice-grid, .level-grid, .goal-grid, .recommendation-grid, .dashboard-bottom, .activity-grid { grid-template-columns: 1fr; }.onboarding-wrap { padding-top: 38px; }.progress-track { margin-bottom: 40px; }.hero-card { grid-template-columns: 1fr; }.daily-ring { display: none; }.hero-card h1 { font-size: 43px; }.workspace { padding-inline: 16px; }.streak { display: none; }.recommend-card { min-height: 210px; }.reader-layout { gap: 20px; }.reading-paper { padding: 28px 22px; }.reading-paper p { font-size: 17px; }.reader-topbar > div { display: none; }.quiz-options { grid-template-columns: 1fr; }
+}
+
+/* Account access */
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; width: min(100%, 480px); margin: 0 0 18px; padding: 4px; background: #f5f1e7; border-radius: 12px; }
+.auth-tab { padding: 10px; color: var(--muted); background: transparent; border: 0; border-radius: 9px; font-weight: 800; }
+.auth-tab.is-active { color: white; background: linear-gradient(120deg, var(--forest), var(--coral)); box-shadow: 0 7px 17px rgba(239,111,97,.18); }
+.auth-form { display: none; }.auth-form.is-active { display: grid; }
+.auth-message { min-height: 18px; margin: -5px 0 0; color: #d85d52; font-size: 12px; }
+.nav-item b { justify-self: end; min-width: 21px; padding: 2px 6px; color: #ef6f61; text-align: center; background: white; border-radius: 99px; font-size: 10px; }
+
+/* Full vocabulary lookup */
+.intensive-view.is-active { animation: none !important; transform: none !important; }
+.word { display: inline; padding: 0 1px; color: inherit; background: transparent; border: 0; border-radius: 3px; font: inherit; cursor: pointer; transition: .15s ease; }
+.word:hover, .word:focus-visible { color: #d86338; background: #fff0bd; outline: none; box-shadow: 0 2px 0 #ef6f61; }
+body.word-open::after { content: ""; position: fixed; inset: 0; z-index: 110; background: rgba(55,43,34,.18); backdrop-filter: blur(2px); }
+body.word-open .reading-paper { filter: blur(4px); opacity: .48; }
+.word-popover { top: 50%; left: 50%; z-index: 130; width: min(430px, calc(100vw - 34px)); max-height: calc(100vh - 34px); overflow: auto; transform: translate(-50%, -50%); }
+.word-popover.is-open { display: block; animation: centered-pop .24s ease both; }
+@keyframes centered-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.96); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+.popover-title h3 { overflow-wrap: anywhere; }
+
+/* Word challenge */
+.quiz-sound { margin: 13px auto 0; }
+.quiz-options button:disabled { cursor: default; }
+.quiz-options button.correct-answer { color: white; background: var(--sky); border-color: var(--sky); }
+.quiz-options button.wrong { color: white; background: #e2665a; }
+.quiz-feedback { margin-top: 25px; padding: 24px; text-align: left; background: #fff9ec; border: 1px solid #f1d79d; border-radius: 15px; animation: screen-in .35s ease; }
+.quiz-feedback.is-wrong { background: #fff2ef; border-color: #f3c0ba; }
+.feedback-status { margin-bottom: 18px; color: #d07128; font-weight: 900; }.quiz-feedback.is-wrong .feedback-status { color: #d95449; }
+.feedback-word { display: flex; justify-content: space-between; align-items: center; gap: 18px; }
+.feedback-word strong, .feedback-word span { display: block; }.feedback-word strong { font: 600 30px/1 Georgia, serif; }.feedback-word span { margin-top: 7px; color: var(--muted); font-size: 13px; }
+.feedback-meaning { margin: 20px 0 10px; font-weight: 750; line-height: 1.7; }.feedback-example { margin: 0 0 20px; color: var(--muted); font: italic 16px/1.6 Georgia, serif; }
+.next-question { width: 100%; }
+.quiz-summary, .empty-state { max-width: 680px; margin: 22px auto; padding: 50px; text-align: center; background: white; border: 1px solid var(--line); border-radius: 20px; }
+.quiz-summary > strong { color: var(--coral); font: 600 76px/1 Georgia, serif; }.quiz-summary h3 { margin: 18px 0 30px; font: 600 28px/1.3 Georgia, serif; }.quiz-summary > div { display: flex; justify-content: center; gap: 12px; }
+.light-outline { padding: 13px 18px; color: var(--forest); background: white; border: 1px solid #efbd89; border-radius: 10px; font-weight: 800; }
+
+/* Wrong book */
+.wrongbook-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 15px; }
+.wrong-card { padding: 26px; background: white; border: 1px solid var(--line); border-radius: 17px; box-shadow: 0 13px 35px rgba(198,118,42,.07); }
+.wrong-top { display: flex; justify-content: space-between; align-items: center; }.wrong-top span { padding: 5px 9px; color: #d95449; background: #fff0ed; border-radius: 99px; font-size: 11px; font-weight: 800; }.wrong-top button { color: var(--muted); background: transparent; border: 0; font-size: 21px; }
+.wrong-card h3 { margin: 25px 0 5px; font: 600 36px/1 Georgia, serif; }.wrong-card small { color: var(--muted); }.wrong-card p { line-height: 1.65; }.wrong-card blockquote { margin: 17px 0; padding: 13px 16px; color: var(--muted); background: #fff9e9; border-left: 3px solid var(--gold); font: italic 15px/1.5 Georgia, serif; }
+.review-sound { padding: 9px 13px; color: white; background: var(--forest); border: 0; border-radius: 9px; font-weight: 750; }
+.empty-state > span { display: grid; place-items: center; width: 70px; height: 70px; margin: 0 auto; color: white; background: var(--sky); border-radius: 50%; font-size: 30px; }.empty-state h3 { font: 600 27px/1.3 Georgia, serif; }.empty-state p { color: var(--muted); }.empty-state .primary-button { width: 240px; margin: 25px auto 0; }
+
+/* Community chat */
+.chat-hero { margin-bottom: 15px; }
+.chat-shell { display: grid; grid-template-columns: 270px minmax(0,1fr); min-height: 600px; overflow: hidden; background: white; border: 1px solid var(--line); border-radius: 19px; box-shadow: var(--shadow); }
+.chat-contacts { padding: 17px; background: #fffaf0; border-right: 1px solid var(--line); }
+.contact-heading { display: flex; justify-content: space-between; align-items: center; padding: 8px 8px 17px; }.contact-heading span { color: #4f9d7b; font-size: 10px; font-weight: 800; }
+.chat-contact { display: grid; grid-template-columns: 45px 1fr; align-items: center; gap: 11px; width: 100%; margin-bottom: 6px; padding: 11px; color: var(--ink); text-align: left; background: transparent; border: 0; border-radius: 12px; }.chat-contact:hover, .chat-contact.is-active { background: white; box-shadow: 0 8px 25px rgba(198,118,42,.1); }
+.contact-avatar { display: grid; place-items: center; width: 43px; height: 43px; color: white; background: var(--avatar); border-radius: 50%; font-weight: 900; }.chat-contact strong, .chat-contact small { display: block; }.chat-contact small { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.chat-panel { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; }.chat-panel > header { display: flex; align-items: center; gap: 11px; padding: 16px 20px; border-bottom: 1px solid var(--line); }.chat-panel > header strong, .chat-panel > header small { display: block; }.chat-panel > header small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.chat-messages { max-height: 520px; overflow-y: auto; padding: 22px; background: linear-gradient(180deg,#fff,#fffdf8); }
+.chat-message { display: flex; align-items: end; gap: 9px; margin-bottom: 18px; }.chat-message.is-mine { flex-direction: row-reverse; }.message-avatar { display: grid; place-items: center; width: 31px; height: 31px; flex: 0 0 auto; color: white; background: var(--coral); border-radius: 50%; font-size: 11px; font-weight: 900; }.chat-message > div { max-width: min(75%,560px); }.chat-message small { color: var(--muted); font-size: 9px; }.chat-message p { margin: 5px 0 0; padding: 11px 14px; background: #f4f1ea; border-radius: 5px 15px 15px 15px; line-height: 1.55; }.chat-message.is-mine p { color: white; background: linear-gradient(120deg,var(--forest),var(--coral)); border-radius: 15px 5px 15px 15px; }
+.chat-compose { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 16px; border-top: 1px solid var(--line); }.chat-compose input { min-width: 0; padding: 13px 15px; background: #f6f3ed; border: 1px solid transparent; border-radius: 11px; outline: none; }.chat-compose input:focus { background: white; border-color: var(--forest); }.chat-compose button { padding: 0 20px; color: white; background: var(--forest); border: 0; border-radius: 11px; font-weight: 800; }
+
+@media (max-width: 760px) {
+  .wrongbook-grid { grid-template-columns: 1fr; }
+  .chat-shell { grid-template-columns: 1fr; }.chat-contacts { display: flex; gap: 7px; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); }.contact-heading { display: none; }.chat-contact { min-width: 190px; margin: 0; }.chat-messages { min-height: 380px; }
+  .quiz-summary > div { flex-direction: column; }.quiz-summary .primary-button { width: 100%; }.quiz-summary, .empty-state { padding: 35px 22px; }
 }
