@@ -3,9 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="拾光英语——根据你的年龄和英语能力，推荐合适的聊天、视频、读物、单词与精读内容。" />
+    <meta name="description" content="拾光英语——根据英语能力等级，提供聊天、视频精听、分级阅读和单词学习。" />
     <title>拾光英语 · 个性化学习空间</title>
-    <link rel="stylesheet" href="styles.css?v=20261106-mainland-video" />
+    <link rel="stylesheet" href="styles.css?v=20261106-learning-redesign" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -103,11 +103,9 @@
             <button class="nav-item is-active" data-view="home"><span>⌂</span>今日学习</button>
             <button class="nav-item" data-view="chat"><span>✦</span>英语聊天</button>
             <button class="nav-item" data-view="video"><span>▶</span>视频学习</button>
-            <button class="nav-item" data-view="reading"><span>▤</span>英文读物</button>
-            <button class="nav-item" data-view="words"><span>Aa</span>背诵单词</button>
-            <button class="nav-item" data-view="quiz"><span>✓</span>考单词</button>
+            <button class="nav-item" data-view="reading"><span>▤</span>英文阅读</button>
+            <button class="nav-item" data-view="words"><span>Aa</span>单词学习</button>
             <button class="nav-item" data-view="wrongbook"><span>!</span>错题本 <b id="wrong-count">0</b></button>
-            <button class="nav-item" data-view="intensive"><span>⌕</span>精细阅读</button>
           </nav>
           <div class="sidebar-profile"><div class="avatar" id="sidebar-avatar">L</div><div><strong id="sidebar-name">Learner</strong><small id="sidebar-level">B1 · 学习中</small></div><button id="logout-button" title="退出登录">↗</button></div>
         </aside>
@@ -117,7 +115,7 @@
 
           <section class="view is-active" id="home-view">
             <div class="hero-card">
-              <div><span class="pill" id="level-pill">B1 · INTERMEDIATE</span><h1>今天，让英语<br /><em>再靠近一点。</em></h1><p id="plan-copy">根据你的英语水平，我们准备了约 25 分钟的学习内容。</p><button class="light-button" data-open="intensive">开始今日学习 →</button></div>
+              <div><span class="pill" id="level-pill">B1 · INTERMEDIATE</span><h1>今天，让英语<br /><em>再靠近一点。</em></h1><p id="plan-copy">根据你的英语水平，我们准备了约 25 分钟的学习内容。</p><button class="light-button" data-open="reading">开始今日学习 →</button></div>
               <div class="daily-ring"><div><strong>25</strong><span>分钟</span></div></div>
             </div>
             <section class="home-dictionary" aria-labelledby="dictionary-title">
@@ -160,6 +158,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=20261106-mainland-video"></script>
+    <script src="app.js?v=20261106-learning-redesign"></script>
   </body>
 </html>
