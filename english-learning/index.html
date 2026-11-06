@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="拾光英语——根据你的年龄和英语能力，推荐合适的聊天、视频、读物、单词与精读内容。" />
     <title>拾光英语 · 个性化学习空间</title>
-    <link rel="stylesheet" href="styles.css?v=20261105-v2" />
+    <link rel="stylesheet" href="styles.css?v=20261106-content" />
   </head>
   <body>
     <div class="noise" aria-hidden="true"></div>
@@ -120,6 +120,12 @@
               <div><span class="pill" id="level-pill">B1 · INTERMEDIATE</span><h1>今天，让英语<br /><em>再靠近一点。</em></h1><p id="plan-copy">根据你的英语水平，我们准备了约 25 分钟的学习内容。</p><button class="light-button" data-open="intensive">开始今日学习 →</button></div>
               <div class="daily-ring"><div><strong>25</strong><span>分钟</span></div></div>
             </div>
+            <section class="home-dictionary" aria-labelledby="dictionary-title">
+              <div class="dictionary-copy"><p class="eyebrow">6,999 WORD DICTIONARY</p><h3 id="dictionary-title">随时查一个单词</h3><p>查询音标、词性、多个中文意思和例句，并可直接播放英式读音。</p></div>
+              <form class="dictionary-search" id="dictionary-search-form"><input id="dictionary-search-input" type="text" autocomplete="off" spellcheck="false" placeholder="输入英文单词，例如 achievement" required /><button type="submit">查询 →</button></form>
+              <p class="dictionary-status" id="dictionary-status">正在加载完整词库…</p>
+              <article class="dictionary-result" id="dictionary-result" aria-live="polite"></article>
+            </section>
             <div class="section-title"><div><p class="eyebrow">PERSONALIZED FOR YOU</p><h3>为你推荐</h3></div><span id="profile-summary"></span></div>
             <div class="recommendation-grid" id="recommendation-grid"></div>
             <div class="dashboard-bottom">
@@ -154,6 +160,6 @@
       </section>
     </main>
 
-    <script src="app.js?v=20261105-v2"></script>
+    <script src="app.js?v=20261106-content"></script>
   </body>
 </html>
