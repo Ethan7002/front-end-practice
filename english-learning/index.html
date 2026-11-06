@@ -39,7 +39,9 @@
           <form id="register-form" class="login-form auth-form">
             <label>昵称<input id="register-name" type="text" placeholder="例如：小雨" autocomplete="name" required /></label>
             <label>邮箱<input id="register-email" type="email" placeholder="name@example.com" autocomplete="email" required /></label>
-            <label>密码<input id="register-password" type="password" placeholder="至少 6 位" minlength="6" autocomplete="new-password" required /></label>
+            <label>创建密码<input id="register-password" type="password" placeholder="8–32 位，须包含英文字母和数字" minlength="8" maxlength="32" pattern="(?=.*[A-Za-z])(?=.*\d).{8,32}" autocomplete="new-password" aria-describedby="password-rules" required /></label>
+            <p class="password-rules" id="password-rules">密码格式：8–32 位，至少包含 1 个英文字母和 1 个数字；可以使用 ! @ # $ 等符号。请勿填写邮箱、腾讯云或 GitHub 的密码。</p>
+            <label>确认密码<input id="register-password-confirm" type="password" placeholder="再次输入刚才创建的密码" minlength="8" maxlength="32" autocomplete="new-password" required /></label>
             <div class="otp-step" id="otp-step" hidden>
               <label>邮箱验证码<input id="register-code" type="text" inputmode="numeric" maxlength="8" placeholder="输入邮件中的验证码" autocomplete="one-time-code" /></label>
               <p>验证码已经发送到邮箱，填写后完成真实账号注册。</p>
@@ -163,6 +165,6 @@
     </main>
 
     <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js?v=3"></script>
-    <script src="app.js?v=20261106-cloud-social"></script>
+    <script src="app.js?v=20261106-register-flow"></script>
   </body>
 </html>
