@@ -40,10 +40,14 @@
             <label>昵称<input id="register-name" type="text" placeholder="例如：小雨" autocomplete="name" required /></label>
             <label>邮箱<input id="register-email" type="email" placeholder="name@example.com" autocomplete="email" required /></label>
             <label>密码<input id="register-password" type="password" placeholder="至少 6 位" minlength="6" autocomplete="new-password" required /></label>
+            <div class="otp-step" id="otp-step" hidden>
+              <label>邮箱验证码<input id="register-code" type="text" inputmode="numeric" maxlength="8" placeholder="输入邮件中的验证码" autocomplete="one-time-code" /></label>
+              <p>验证码已经发送到邮箱，填写后完成真实账号注册。</p>
+            </div>
             <p class="auth-message" id="register-message" role="status"></p>
-            <button class="primary-button" type="submit">注册并开始评估 <span>✦</span></button>
+            <button class="primary-button" id="register-submit" type="submit">发送验证码 <span>✦</span></button>
           </form>
-          <p class="privacy-note">当前版本的账号和学习记录保存在本浏览器中。</p>
+          <p class="privacy-note">账号、动态和私信由腾讯云安全保存；学习偏好保存在你的账号中。</p>
         </div>
       </section>
 
@@ -158,6 +162,7 @@
       </section>
     </main>
 
-    <script src="app.js?v=20261106-learning-redesign"></script>
+    <script src="https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js?v=3"></script>
+    <script src="app.js?v=20261106-cloud-social"></script>
   </body>
 </html>
