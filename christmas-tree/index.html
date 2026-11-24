@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#050207" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000'/%3E%3Cpath d='M50 9l9 25 27 1-21 16 7 26-22-15-22 15 7-26-21-16 27-1z' fill='%23ffd36a'/%3E%3Ccircle cx='50' cy='43' r='17' fill='%23fff' opacity='.55'/%3E%3C/svg%3E" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23000'/%3E%3Cpath d='M50 9l9 25 27 1-21 16 7 26-22-15-22 15 7-26-21-16 27-1z' fill='%23ffd36a'/%3E%3C/svg%3E" />
+  <title>星光圣诞树</title>
+  <style>
+    :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #050207; }
+    body { touch-action: manipulation; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+    .vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(circle at 50% 45%, transparent 22%, rgba(4,0,6,.28) 62%, rgba(0,0,0,.82) 100%); }
+    .grain { position: fixed; inset: 0; pointer-events: none; opacity: .12; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E"); mix-blend-mode: soft-light; }
+    .brand { position: fixed; top: max(24px, env(safe-area-inset-top)); left: 0; right: 0; text-align: center; pointer-events: none; opacity: 0; transform: translateY(-10px); transition: opacity 1.4s ease, transform 1.4s ease; letter-spacing: .34em; text-indent: .34em; color: rgba(255,241,197,.84); font-size: clamp(11px, 2vw, 14px); }
+    .brand.show { opacity: 1; transform: translateY(0); }
+    .stage-copy { position: fixed; left: 20px; right: 20px; bottom: max(84px, calc(env(safe-area-inset-bottom) + 76px)); text-align: center; pointer-events: none; opacity: 0; transform: translateY(10px); transition: opacity 1.2s ease, transform 1.2s ease; }
+    .stage-copy.show { opacity: 1; transform: translateY(0); }
+    .stage-copy h1 { margin: 0 0 8px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(24px, 5vw, 46px); font-weight: 400; letter-spacing: .08em; color: #fff4d6; text-shadow: 0 0 24px rgba(255,184,64,.55); }
+    .stage-copy p { margin: 0; color: rgba(255,225,236,.55); font-size: 12px; letter-spacing: .24em; text-indent: .24em; }
+    .controls { position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center; }
+    button { appearance: none; border: 1px solid rgba(255,215,126,.34); border-radius: 999px; min-height: 46px; padding: 0 22px; color: #fff7df; background: rgba(35,24,6,.62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); font: inherit; font-size: 14px; letter-spacing: .14em; cursor: pointer; box-shadow: 0 8px 36px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.08); transition: transform .2s ease, background .2s ease, border-color .2s ease, opacity .3s ease; }
+    button:hover { transform: translateY(-2px); background: rgba(78,52,10,.76); border-color: rgba(255,218,139,.58); }
+    button:active { transform: translateY(0) scale(.97); }
+    button:focus-visible { outline: 2px solid #ffd978; outline-offset: 4px; }
+    #replay { opacity: 0; pointer-events: none; }
+    #replay.show { opacity: 1; pointer-events: auto; }
+    #replay { width: 48px; padding: 0; display: grid; place-items: center; }
+    #replay svg { width: 20px; height: 20px; }
+    .intro { position: fixed; inset: 0; display: grid; place-items: center; background: #000; transition: opacity .8s ease, visibility .8s; }
+    .intro.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .intro-inner { text-align: center; padding: 28px; }
+    .mini-star { width: 44px; height: 44px; margin: 0 auto 20px; color: #ffe79a; filter: drop-shadow(0 0 14px #ffb52e); animation: breathe 2.2s ease-in-out infinite; }
+    .intro h2 { margin: 0 0 10px; font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(30px, 7vw, 54px); letter-spacing: .08em; }
+    .intro p { margin: 0 0 28px; color: rgba(255,230,239,.56); font-size: 13px; letter-spacing: .12em; line-height: 1.8; }
+    .intro button { min-width: 156px; background: linear-gradient(135deg, rgba(143,92,12,.86), rgba(76,48,7,.8)); border-color: rgba(255,215,126,.48); box-shadow: 0 0 42px rgba(255,179,45,.2); }
+    @keyframes breathe { 50% { transform: scale(1.14) rotate(5deg); filter: drop-shadow(0 0 22px #ffb52e); } }
+    @media (prefers-reduced-motion: reduce) { .mini-star { animation: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-label="由旋转星光组成的圣诞树动画"></canvas>
+  <div class="vignette"></div><div class="grain"></div>
+  <div class="brand" id="brand">A LITTLE CHRISTMAS MAGIC</div>
+  <div class="stage-copy" id="copy"><h1>Merry Christmas</h1></div>
+  <div class="controls"><button id="replay" type="button" aria-label="重新播放" title="重新播放"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.34 5.66" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 5v6h-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+  <div class="intro" id="intro">
+    <div class="intro-inner">
+      <svg class="mini-star" viewBox="0 0 100 100" aria-hidden="true"><path fill="currentColor" d="M50 3l11.4 32.6 34.6.7-27.6 20.9L78.5 90 50 70.4 21.5 90l10.1-32.8L4 36.3l34.6-.7z"/></svg>
+      <h2>星光圣诞树</h2>
+      <p>点点星光 · 旋转上升 · 汇聚成树</p>
+      <button id="play" type="button">播放动画</button>
+    </div>
+  </div>
+  <script>
+    const canvas = document.querySelector('#scene');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const intro = document.querySelector('#intro');
+    const playBtn = document.querySelector('#play');
+    const replayBtn = document.querySelector('#replay');
+    const brand = document.querySelector('#brand');
+    const copy = document.querySelector('#copy');
+    const TAU = Math.PI * 2;
+    let W=0,H=0,DPR=1, particles=[], bgStars=[], running=false, startTime=0, raf=0;
+    const rand=(a,b)=>a+Math.random()*(b-a), clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+    const ease=t=>1-Math.pow(1-clamp(t),3);
+    const smooth=t=>{t=clamp(t);return t*t*(3-2*t)};
+    function resize(){
+      DPR=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+      canvas.width=Math.round(W*DPR); canvas.height=Math.round(H*DPR); ctx.setTransform(DPR,0,0,DPR,0,0);
+      makeScene();
+    }
+    function treePoint(i,n){
+      const u=Math.pow(i/n,.84), y=(u-.5)*1.55;
+      const radius=(.08+.92*u)*(.78+Math.random()*.22);
+      const a=i*2.399963+rand(-.22,.22);
+      return { x:Math.cos(a)*radius, y, z:Math.sin(a)*radius, kind:'tree' };
+    }
+    function garlandPoint(i,n){
+      const u=i/(n-1), y=(u-.5)*1.52, r=.12+.98*u, a=u*TAU*6.2;
+      return { x:Math.cos(a)*r, y, z:Math.sin(a)*r, kind:'garland' };
+    }
+    function starPoint(i,n){
+      const outer=.26, inner=.105, seg=(i/n)*10, k=Math.floor(seg), q=seg-k;
+      const r1=k%2===0?outer:inner, r2=(k+1)%2===0?outer:inner, r=r1+(r2-r1)*q;
+      const a=-Math.PI/2+(seg/10)*TAU;
+      return { x:Math.cos(a)*r, y:-.91+Math.sin(a)*r, z:0, kind:'star' };
+    }
+    function makeScene(){
+      const mobile=W<620, count=mobile?720:1050, garlands=Math.floor(count*.2), stars=90;
+      particles=[];
+      for(let i=0;i<count;i++){
+        let target=i<stars?starPoint(i,stars):i<stars+garlands?garlandPoint(i-stars,garlands):treePoint(i-stars-garlands,count-stars-garlands);
+        const seedA=rand(0,TAU), seedR=rand(.01,.24);
+        particles.push({
+          ...target, sx:Math.cos(seedA)*seedR, sy:rand(-.08,.08), sz:Math.sin(seedA)*seedR,
+          phase:rand(0,TAU), delay:rand(0,.16), size:target.kind==='star'?rand(1.2,2.7):target.kind==='garland'?rand(1,2.2):rand(.6,1.75),
+          tone:Math.random(), wobble:rand(.6,1.4)
+        });
+      }
+      bgStars=Array.from({length:mobile?85:150},()=>({x:Math.random(),y:Math.random(),s:rand(.3,1.5),p:rand(0,TAU),v:rand(.5,1.4)}));
+    }
+    function project(x,y,z,scale,cy){
+      const depth=3.6+z, f=3.6/depth;
+      return { x:W/2+x*scale*f, y:cy+y*scale*f, f };
+    }
+    function glowDot(x,y,r,color,alpha){
+      ctx.globalAlpha=alpha*.18; ctx.fillStyle=color; ctx.beginPath();ctx.arc(x,y,r*4,0,TAU);ctx.fill();
+      ctx.globalAlpha=alpha*.5; ctx.beginPath();ctx.arc(x,y,r*1.9,0,TAU);ctx.fill();
+      ctx.globalAlpha=alpha; ctx.fillStyle='#fffaf0'; ctx.beginPath();ctx.arc(x,y,Math.max(.45,r*.58),0,TAU);ctx.fill();
+    }
+    function drawBackground(time,energy){
+      ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+      ctx.globalCompositeOperation='lighter';
+      bgStars.forEach(s=>{const a=.18+.38*(.5+.5*Math.sin(time*s.v+s.p));glowDot(s.x*W,s.y*H,s.s,'#ffd978',a)});
+    }
+    function drawStarBurst(cx,cy,a,time){
+      if(a<=0)return; ctx.save();ctx.translate(cx,cy);ctx.rotate(time*.18);ctx.globalCompositeOperation='lighter';
+      const grad=ctx.createRadialGradient(0,0,1,0,0,62);grad.addColorStop(0,`rgba(255,255,255,${a})`);grad.addColorStop(.16,`rgba(255,219,126,${a*.66})`);grad.addColorStop(1,'rgba(255,167,32,0)');ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,62,0,TAU);ctx.fill();
+      ctx.strokeStyle=`rgba(255,236,181,${a*.75})`;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-60,0);ctx.lineTo(60,0);ctx.moveTo(0,-34);ctx.lineTo(0,34);ctx.stroke();ctx.restore();
+    }
+    function frame(now){
+      if(!running)return; const elapsed=(now-startTime)/1000, t=elapsed/11.8;
+      drawBackground(elapsed,smooth((t-.2)/.7));
+      const scale=Math.min(W*.37,H*.35), cy=H*(W<620?.43:.45);
+      const grow=smooth((t-.06)/.64), settle=smooth((t-.55)/.26), rotation=elapsed*(1.75-1.25*settle);
+      const order=[];
+      particles.forEach((p,i)=>{
+        const local=clamp((grow-p.delay)/(1-p.delay));
+        const lift=ease(local), spiralR=(.18+1.2*lift)*(1-settle*.83);
+        const turns=TAU*(2.6*lift)+p.phase+rotation;
+        const swirl={x:Math.cos(turns)*spiralR, y:.82-1.65*lift+Math.sin(p.phase*2)*.08*(1-lift), z:Math.sin(turns)*spiralR};
+        const lock=smooth((local-.63)/.37);
+        let x=p.sx*(1-lift)+swirl.x*lift, y=p.sy*(1-lift)+swirl.y*lift, z=p.sz*(1-lift)+swirl.z*lift;
+        x=x*(1-lock)+p.x*lock; y=y*(1-lock)+p.y*lock; z=z*(1-lock)+p.z*lock;
+        const finalSpin=rotation*(1-lock*.88), c=Math.cos(finalSpin),s=Math.sin(finalSpin); const rx=x*c-z*s,rz=x*s+z*c;
+        order.push({p,x:rx,y,z:rz,i,local});
+      });
+      order.sort((a,b)=>b.z-a.z); ctx.globalCompositeOperation='lighter';
+      order.forEach(o=>{
+        const q=project(o.x,o.y,o.z,scale,cy), tw=.72+.28*Math.sin(elapsed*3.2+o.p.phase);
+        const alpha=clamp(o.local*1.4)*tw, r=o.p.size*q.f*(.72+.35*settle);
+        const color=o.p.kind==='garland'?'#ffb52e':o.p.kind==='star'?'#fff0b5':o.p.tone>.84?'#fff2c2':o.p.tone>.25?'#ffd36a':'#ffb13b';
+        glowDot(q.x,q.y,r,color,alpha);
+      });
+      const starAlpha=smooth((t-.67)/.16); drawStarBurst(W/2,cy-scale*.91,starAlpha,elapsed);
+      if(t>.74){copy.classList.add('show');brand.classList.add('show')}
+      if(t>=1){ running=false; replayBtn.classList.add('show'); return; }
+      raf=requestAnimationFrame(frame);
+    }
+    function start(){
+      cancelAnimationFrame(raf); intro.classList.add('hidden'); replayBtn.classList.remove('show'); copy.classList.remove('show');brand.classList.remove('show');
+      running=true;startTime=performance.now();raf=requestAnimationFrame(frame);
+    }
+    playBtn.addEventListener('click',start); replayBtn.addEventListener('click',start);
+    addEventListener('resize',resize,{passive:true}); resize(); drawBackground(0,0);
+  </script>
+</body>
+</html>
